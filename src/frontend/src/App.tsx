@@ -13,7 +13,6 @@ const VOWEL_GRID: string[][] = [
   ["ஒ", "ஓ", "ஔ"],
 ];
 
-// Row labels used as stable React keys (derived from first element)
 const ROW_KEYS = ["க-row", "த-row", "ல-row", "ஷ-row"];
 
 const CONSONANT_GRID: (string | null)[][] = [
@@ -25,7 +24,20 @@ const CONSONANT_GRID: (string | null)[][] = [
 
 const COMBOS: Record<string, string[]> = {
   க: ["க்", "கா", "கி", "கீ", "கு", "கூ", "கெ", "கே", "கை", "கொ", "கோ", "கௌ"],
-  ங: ["ங்", "ஙா", "ஙி", "ஙீ", "ஙு", "ஙூ", "ஙெ", "ஙே", "ஙை", "ஙொ", "ஙோ", "ஙௌ"],
+  ங: [
+    "ங்",
+    "ங\u0BBE",
+    "ங\u0BBF",
+    "ங\u0BC0",
+    "ங\u0BC1",
+    "ங\u0BC2",
+    "ங\u0BC6",
+    "ங\u0BC7",
+    "ங\u0BC8",
+    "ங\u0BCA",
+    "ங\u0BCB",
+    "ங\u0BCC",
+  ],
   ச: ["ச்", "சா", "சி", "சீ", "சு", "சூ", "செ", "சே", "சை", "சொ", "சோ", "சௌ"],
   ஞ: ["ஞ்", "ஞா", "ஞி", "ஞீ", "ஞு", "ஞூ", "ஞெ", "ஞே", "ஞை", "ஞொ", "ஞோ", "ஞௌ"],
   ட: ["ட்", "டா", "டி", "டீ", "டு", "டூ", "டெ", "டே", "டை", "டொ", "டோ", "டௌ"],
@@ -68,11 +80,45 @@ function getComboCells(root: string): string[] {
 
 // ── SPEECH ────────────────────────────────────────────────────────────────────
 
+const VIRAMA = "\u0BCD"; // ்
+
+// ங doesn't appear word-initially in Tamil, so TTS engines fail to pronounce it.
+// Map each ங combo to a ங்க-based form that TTS can handle correctly.
+const PRONUNCIATION_OVERRIDES: Record<string, string> = {
+  ங: "ங்க",
+  ங்: "ங்க",
+  "ங\u0BBE": "ங்கா",
+  "ங\u0BBF": "ங்கி",
+  "ங\u0BC0": "ங்கீ",
+  "ங\u0BC1": "ங்கு",
+  "ங\u0BC2": "ங்கூ",
+  "ங\u0BC6": "ங்கெ",
+  "ங\u0BC7": "ங்கே",
+  "ங\u0BC8": "ங்கை",
+  "ங\u0BCA": "ங்கொ",
+  "ங\u0BCB": "ங்கோ",
+  "ங\u0BCC": "ங்கௌ",
+};
+
+function getPronunciation(char: string): string {
+  // Check pronunciation overrides first (e.g. ங series)
+  const normalized = char.normalize("NFC");
+  if (PRONUNCIATION_OVERRIDES[normalized]) {
+    return PRONUNCIATION_OVERRIDES[normalized];
+  }
+  // Strip trailing virama so TTS speaks the base consonant sound
+  if (normalized.endsWith(VIRAMA)) {
+    return normalized.slice(0, normalized.length - 1);
+  }
+  return normalized;
+}
+
 function useSpeech() {
   const speak = useCallback((char: string) => {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(char);
+    const pronunciation = getPronunciation(char);
+    const utt = new SpeechSynthesisUtterance(pronunciation);
     utt.lang = "ta-IN";
     utt.rate = 0.9;
     window.speechSynthesis.speak(utt);
@@ -277,9 +323,25 @@ export default function App() {
   const [selectedConsonant, setSelectedConsonant] = useState<string | null>(
     null,
   );
+  const pendingRootRef = useRef<string | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textScrollRef = useRef<HTMLDivElement>(null);
   const { speak } = useSpeech();
+
+  useEffect(() => {
+    const orientationAny = screen.orientation as any;
+    if (screen.orientation && typeof orientationAny.lock === "function") {
+      orientationAny.lock("landscape").catch(() => {});
+    }
+    const screenAny = screen as any;
+    if (typeof screenAny.lockOrientation === "function") {
+      screenAny.lockOrientation("landscape");
+    } else if (typeof screenAny.mozLockOrientation === "function") {
+      screenAny.mozLockOrientation("landscape");
+    } else if (typeof screenAny.msLockOrientation === "function") {
+      screenAny.msLockOrientation("landscape");
+    }
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on text change
   useEffect(() => {
@@ -288,16 +350,20 @@ export default function App() {
     }
   }, [text]);
 
+  const showFlash = useCallback((char: string) => {
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    setFlashChar(char);
+    setFlashKey((k) => k + 1);
+    flashTimeoutRef.current = setTimeout(() => setFlashChar(""), 1500);
+  }, []);
+
   const fireChar = useCallback(
     (char: string) => {
       setText((prev) => prev + char);
       if (soundOn) speak(char);
-      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
-      setFlashChar(char);
-      setFlashKey((k) => k + 1);
-      flashTimeoutRef.current = setTimeout(() => setFlashChar(""), 1500);
+      showFlash(char);
     },
-    [soundOn, speak],
+    [soundOn, speak, showFlash],
   );
 
   const handleLeftKey = useCallback(
@@ -305,32 +371,44 @@ export default function App() {
       const idx = rowIdx * 3 + colIdx;
       if (selectedConsonant) {
         const combos = getComboCells(selectedConsonant);
-        if (combos[idx]) {
-          fireChar(combos[idx]);
+        const combo = combos[idx];
+        if (combo) {
+          const root = pendingRootRef.current;
+          if (root) {
+            setText((prev) => {
+              if (prev.endsWith(root)) {
+                return prev.slice(0, prev.length - root.length) + combo;
+              }
+              return prev + combo;
+            });
+          } else {
+            setText((prev) => prev + combo);
+          }
+          if (soundOn) speak(combo);
+          showFlash(combo);
           setSelectedConsonant(null);
+          pendingRootRef.current = null;
         }
       } else {
         const vowel = VOWEL_GRID[rowIdx]?.[colIdx];
         if (vowel) fireChar(vowel);
       }
     },
-    [selectedConsonant, fireChar],
+    [selectedConsonant, fireChar, soundOn, speak, showFlash],
   );
 
   const handleConsonant = useCallback(
     (root: string) => {
-      if (selectedConsonant === root) {
-        fireChar(root);
-        setSelectedConsonant(null);
-      } else {
-        setSelectedConsonant(root);
-        if (soundOn) speak(root);
-      }
+      fireChar(root);
+      setSelectedConsonant(root);
+      pendingRootRef.current = root;
     },
-    [selectedConsonant, fireChar, soundOn, speak],
+    [fireChar],
   );
 
   const backspace = useCallback(() => {
+    setSelectedConsonant(null);
+    pendingRootRef.current = null;
     setText((prev) => {
       const arr = [...prev];
       arr.pop();
@@ -342,6 +420,7 @@ export default function App() {
     setText("");
     setFlashChar("");
     setSelectedConsonant(null);
+    pendingRootRef.current = null;
   }, []);
 
   const copyToClipboard = useCallback(async () => {
@@ -649,7 +728,11 @@ export default function App() {
               <button
                 type="button"
                 data-ocid="keyboard.space_button"
-                onClick={() => setText((prev) => `${prev} `)}
+                onClick={() => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  setText((prev) => `${prev} `);
+                }}
                 className="flex-1 flex items-center justify-center gap-1.5 rounded-xl
                   shadow-key active:shadow-key-active active:translate-y-px
                   transition-all duration-75 select-none cursor-pointer font-bold tamil-text"
@@ -665,7 +748,11 @@ export default function App() {
               <button
                 type="button"
                 data-ocid="keyboard.aytham_button"
-                onClick={() => fireChar("ஃ")}
+                onClick={() => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  fireChar("ஃ");
+                }}
                 className="flex items-center justify-center rounded-xl tamil-text
                   shadow-key active:shadow-key-active active:translate-y-px
                   transition-all duration-75 select-none cursor-pointer font-bold"
@@ -681,7 +768,11 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => setText((prev) => `${prev}\n`)}
+                onClick={() => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  setText((prev) => `${prev}\n`);
+                }}
                 className="flex items-center justify-center rounded-xl
                   shadow-key active:shadow-key-active active:translate-y-px
                   transition-all duration-75 select-none cursor-pointer font-bold"
