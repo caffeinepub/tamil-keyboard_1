@@ -1,0 +1,149 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Bright, child-friendly palette */
+    --background: 0.97 0.04 95;
+    --foreground: 0.2 0.05 260;
+
+    --card: 1 0 0;
+    --card-foreground: 0.2 0.05 260;
+
+    --popover: 1 0 0;
+    --popover-foreground: 0.2 0.05 260;
+
+    /* Primary: vibrant coral-red for top bar */
+    --primary: 0.62 0.22 25;
+    --primary-foreground: 1 0 0;
+
+    --secondary: 0.92 0.06 95;
+    --secondary-foreground: 0.25 0.08 250;
+
+    --muted: 0.94 0.03 95;
+    --muted-foreground: 0.52 0.05 250;
+
+    --accent: 0.88 0.12 190;
+    --accent-foreground: 0.15 0.06 250;
+
+    --destructive: 0.55 0.22 25;
+    --destructive-foreground: 1 0 0;
+
+    --border: 0.85 0.04 250;
+    --input: 0.85 0.04 250;
+    --ring: 0.62 0.22 25;
+
+    --radius: 0.75rem;
+
+    /* Key section colors */
+    --vowel-bg: 0.92 0.14 95;
+    --vowel-fg: 0.3 0.08 55;
+    --vowel-key: 0.98 0.09 90;
+    --vowel-key-hover: 0.88 0.18 80;
+
+    --consonant-bg: 0.88 0.12 185;
+    --consonant-fg: 0.22 0.08 200;
+    --consonant-key: 0.95 0.08 185;
+    --consonant-key-hover: 0.82 0.16 190;
+
+    --uyirmei-even: 0.97 0.04 95;
+    --uyirmei-odd: 0.94 0.07 175;
+    --uyirmei-key: 0.99 0.03 90;
+
+    --special-bg: 0.72 0.18 275;
+    --special-fg: 1 0 0;
+    --special-key: 0.78 0.2 275;
+    --special-key-hover: 0.65 0.22 275;
+
+    --chart-1: 0.62 0.22 25;
+    --chart-2: 0.72 0.18 275;
+    --chart-3: 0.6 0.16 185;
+    --chart-4: 0.8 0.14 95;
+    --chart-5: 0.7 0.2 330;
+
+    --sidebar: 0.94 0.02 250;
+    --sidebar-foreground: 0.2 0.05 260;
+    --sidebar-primary: 0.62 0.22 25;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.92 0.06 95;
+    --sidebar-accent-foreground: 0.25 0.08 250;
+    --sidebar-border: 0.85 0.04 250;
+    --sidebar-ring: 0.62 0.22 25;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Nunito", sans-serif;
+    overflow: hidden;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Tamil script rendering */
+.tamil-text {
+  font-family: "Noto Sans Tamil", sans-serif;
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fredoka for display headings */
+.font-display {
+  font-family: "Fredoka One", sans-serif;
+}
+
+/* Key press animation */
+@keyframes keypress {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.88);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.key-press {
+  animation: keypress 0.14s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Scrollbar styling for keyboard */
+.keyboard-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.keyboard-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.keyboard-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.08 250 / 0.4);
+  border-radius: 2px;
+}
+
+/* Bouncy pulse for listen button */
+@keyframes bounce-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.72 0.18 275 / 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 10px oklch(0.72 0.18 275 / 0);
+  }
+}
+.listen-pulse {
+  animation: bounce-glow 1.2s infinite;
+}
