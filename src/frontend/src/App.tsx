@@ -82,23 +82,8 @@ function getComboCells(root: string): string[] {
 
 const VIRAMA = "\u0BCD"; // ்
 
-// ங doesn't appear word-initially in Tamil, so TTS engines fail to pronounce it.
-// Map each ங combo to a ங்க-based form that TTS can handle correctly.
-const PRONUNCIATION_OVERRIDES: Record<string, string> = {
-  ங: "ங்க",
-  ங்: "ங்க",
-  "ங\u0BBE": "ங்கா",
-  "ங\u0BBF": "ங்கி",
-  "ங\u0BC0": "ங்கீ",
-  "ங\u0BC1": "ங்கு",
-  "ங\u0BC2": "ங்கூ",
-  "ங\u0BC6": "ங்கெ",
-  "ங\u0BC7": "ங்கே",
-  "ங\u0BC8": "ங்கை",
-  "ங\u0BCA": "ங்கொ",
-  "ங\u0BCB": "ங்கோ",
-  "ங\u0BCC": "ங்கௌ",
-};
+// No series-level overrides — all letters use their natural Tamil characters for TTS.
+const PRONUNCIATION_OVERRIDES: Record<string, string> = {};
 
 function getPronunciation(char: string): string {
   // Check pronunciation overrides first (e.g. ங series)
