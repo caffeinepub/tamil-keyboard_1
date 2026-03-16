@@ -82,29 +82,40 @@ function getComboCells(root: string): string[] {
 
 const VIRAMA = "\u0BCD"; // ்
 
-// No series-level overrides — all letters use their natural Tamil characters for TTS.
-const PRONUNCIATION_OVERRIDES: Record<string, string> = {};
+// ங series — use English phonetics for clear TTS pronunciation
+const PRONUNCIATION_OVERRIDES: Record<string, { text: string; lang: string }> =
+  {
+    ங்: { text: "ng", lang: "en-US" },
+    "ங\u0BBE": { text: "ngaa", lang: "en-US" },
+    "ங\u0BBF": { text: "ngi", lang: "en-US" },
+    "ங\u0BC0": { text: "ngii", lang: "en-US" },
+    "ங\u0BC1": { text: "ngu", lang: "en-US" },
+    "ங\u0BC2": { text: "nguu", lang: "en-US" },
+    "ங\u0BC6": { text: "nge", lang: "en-US" },
+    "ங\u0BC7": { text: "ngee", lang: "en-US" },
+    "ங\u0BC8": { text: "ngai", lang: "en-US" },
+    "ங\u0BCA": { text: "ngo", lang: "en-US" },
+    "ங\u0BCB": { text: "ngoo", lang: "en-US" },
+    "ங\u0BCC": { text: "ngau", lang: "en-US" },
+  };
 
-function getPronunciation(char: string): string {
-  // Check pronunciation overrides first (e.g. ங series)
+function getPronunciation(char: string): { text: string; lang: string } {
   const normalized = char.normalize("NFC");
-  if (PRONUNCIATION_OVERRIDES[normalized]) {
-    return PRONUNCIATION_OVERRIDES[normalized];
-  }
-  // Strip trailing virama so TTS speaks the base consonant sound
+  const override = PRONUNCIATION_OVERRIDES[normalized];
+  if (override) return override;
   if (normalized.endsWith(VIRAMA)) {
-    return normalized.slice(0, normalized.length - 1);
+    return { text: normalized.slice(0, normalized.length - 1), lang: "ta-IN" };
   }
-  return normalized;
+  return { text: normalized, lang: "ta-IN" };
 }
 
 function useSpeech() {
   const speak = useCallback((char: string) => {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const pronunciation = getPronunciation(char);
-    const utt = new SpeechSynthesisUtterance(pronunciation);
-    utt.lang = "ta-IN";
+    const { text, lang } = getPronunciation(char);
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = lang;
     utt.rate = 0.9;
     window.speechSynthesis.speak(utt);
   }, []);
