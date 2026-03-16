@@ -1,5 +1,14 @@
 import { Toaster } from "@/components/ui/sonner";
-import { Copy, Delete, Square, Trash2, Volume2, VolumeX } from "lucide-react";
+import {
+  Copy,
+  Delete,
+  Edit3,
+  Square,
+  Trash2,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -78,31 +87,86 @@ function getComboCells(root: string): string[] {
   return COMBOS[root] ?? [];
 }
 
+// ── ENGLISH KEYBOARD DATA ──────────────────────────────────────────────────────
+
+const EN_ROW1 = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
+const EN_ROW2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L"];
+const EN_ROW3 = ["Z", "X", "C", "V", "B", "N", "M"];
+
+// Color palettes for English keyboard — blue/green/orange
+const EN_ROW_COLORS = [
+  "oklch(0.88 0.10 250)", // row 1 — blue
+  "oklch(0.88 0.10 165)", // row 2 — green
+  "oklch(0.88 0.14 60)", // row 3 — orange
+];
+const EN_ROW_TEXT = [
+  "oklch(0.22 0.12 250)",
+  "oklch(0.20 0.10 170)",
+  "oklch(0.25 0.14 45)",
+];
+
+// ── NUMBERS KEYBOARD DATA ─────────────────────────────────────────────────────
+
+const NUM_ROW1 = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+const NUM_ROW2 = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")"];
+const NUM_ROW3 = ["-", "+", "=", "_", "/", "?", ".", ",", ":", ";"];
+
+const NUM_ROW_COLORS = [
+  "oklch(0.90 0.10 320)", // row 1 — pink/purple
+  "oklch(0.88 0.12 280)", // row 2 — purple
+  "oklch(0.88 0.10 220)", // row 3 — blue
+];
+const NUM_ROW_TEXT = [
+  "oklch(0.22 0.12 320)",
+  "oklch(0.22 0.12 270)",
+  "oklch(0.22 0.10 220)",
+];
+
+// ── MODE TYPE ─────────────────────────────────────────────────────────────────
+
+type KeyboardMode = "tamil" | "english" | "numbers";
+
+function nextMode(m: KeyboardMode): KeyboardMode {
+  if (m === "tamil") return "english";
+  if (m === "english") return "numbers";
+  return "tamil";
+}
+
+function modeLabel(m: KeyboardMode): string {
+  if (m === "tamil") return "த";
+  if (m === "english") return "EN";
+  return "123";
+}
+
 // ── SPEECH ────────────────────────────────────────────────────────────────────
 
 const VIRAMA = "\u0BCD"; // ்
 
-// ங series — use English phonetics for clear TTS pronunciation
-const PRONUNCIATION_OVERRIDES: Record<string, { text: string; lang: string }> =
-  {
-    ங்: { text: "ng", lang: "en-US" },
-    "ங\u0BBE": { text: "ngaa", lang: "en-US" },
-    "ங\u0BBF": { text: "ngi", lang: "en-US" },
-    "ங\u0BC0": { text: "ngii", lang: "en-US" },
-    "ங\u0BC1": { text: "ngu", lang: "en-US" },
-    "ங\u0BC2": { text: "nguu", lang: "en-US" },
-    "ங\u0BC6": { text: "nge", lang: "en-US" },
-    "ங\u0BC7": { text: "ngee", lang: "en-US" },
-    "ங\u0BC8": { text: "ngai", lang: "en-US" },
-    "ங\u0BCA": { text: "ngo", lang: "en-US" },
-    "ங\u0BCB": { text: "ngoo", lang: "en-US" },
-    "ங\u0BCC": { text: "ngau", lang: "en-US" },
-  };
+const NGA_PRONUNCIATIONS: Record<string, { text: string; lang: string }> = {
+  "\u0B99": { text: "nga.", lang: "en-US" },
+  "\u0B99\u0BCD": { text: "ng.", lang: "en-US" },
+  "\u0B99\u0BBE": { text: "ngaa.", lang: "en-US" },
+  "\u0B99\u0BBF": { text: "ngi.", lang: "en-US" },
+  "\u0B99\u0BC0": { text: "ngii.", lang: "en-US" },
+  "\u0B99\u0BC1": { text: "ngu.", lang: "en-US" },
+  "\u0B99\u0BC2": { text: "nguu.", lang: "en-US" },
+  "\u0B99\u0BC6": { text: "nge.", lang: "en-US" },
+  "\u0B99\u0BC7": { text: "ngee.", lang: "en-US" },
+  "\u0B99\u0BC8": { text: "ngai.", lang: "en-US" },
+  "\u0B99\u0BCA": { text: "ngo.", lang: "en-US" },
+  "\u0B99\u0BCB": { text: "ngoo.", lang: "en-US" },
+  "\u0B99\u0BCC": { text: "ngau.", lang: "en-US" },
+};
 
-function getPronunciation(char: string): { text: string; lang: string } {
+function getPronunciation(char: string): {
+  text: string;
+  lang: string;
+  rate?: number;
+} {
   const normalized = char.normalize("NFC");
-  const override = PRONUNCIATION_OVERRIDES[normalized];
-  if (override) return override;
+  if (normalized in NGA_PRONUNCIATIONS) {
+    return { ...NGA_PRONUNCIATIONS[normalized], rate: 0.75 };
+  }
   if (normalized.endsWith(VIRAMA)) {
     return { text: normalized.slice(0, normalized.length - 1), lang: "ta-IN" };
   }
@@ -110,13 +174,15 @@ function getPronunciation(char: string): { text: string; lang: string } {
 }
 
 function useSpeech() {
-  const speak = useCallback((char: string) => {
+  const speak = useCallback((char: string, forceLang?: string) => {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const { text, lang } = getPronunciation(char);
+    const { text, lang, rate } = forceLang
+      ? { text: char, lang: forceLang, rate: 0.9 }
+      : getPronunciation(char);
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = lang;
-    utt.rate = 0.9;
+    utt.rate = rate ?? 0.9;
     window.speechSynthesis.speak(utt);
   }, []);
   return { speak };
@@ -190,7 +256,188 @@ function FlashCard({ char, flashKey }: { char: string; flashKey: number }) {
   );
 }
 
+// ── REFERENCE TEXT BOX ────────────────────────────────────────────────────────
+
+interface ReferenceBoxProps {
+  referenceText: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: (text: string) => void;
+  onClear: () => void;
+}
+
+function ReferenceBox({
+  referenceText,
+  isEditing,
+  onEdit,
+  onSave,
+  onClear,
+}: ReferenceBoxProps) {
+  const [draft, setDraft] = useState(referenceText);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      setDraft(referenceText);
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    }
+  }, [isEditing, referenceText]);
+
+  return (
+    <div
+      data-ocid="reference.panel"
+      className="flex-none flex flex-col"
+      style={{
+        background: "oklch(0.98 0.06 280)",
+        border: "2px solid oklch(0.80 0.14 280)",
+        borderRadius: "12px",
+        margin: "4px 8px 2px",
+        overflow: "hidden",
+        height: "22%",
+        flex: "none",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-1.5 px-2 py-0.5 flex-none"
+        style={{
+          background: "oklch(0.72 0.18 280)",
+          borderBottom: "1px solid oklch(0.62 0.2 280)",
+        }}
+      >
+        <span
+          className="tamil-text font-bold flex-1"
+          style={{ fontSize: "clamp(9px, 1.2vw, 11px)", color: "white" }}
+        >
+          📖 பார்க்க வேண்டிய வாக்கியம்
+        </span>
+        {!isEditing && (
+          <button
+            type="button"
+            data-ocid="reference.edit_button"
+            onClick={onEdit}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
+            style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+          >
+            <Edit3 className="w-3 h-3" />
+            <span>தட்டு / Paste</span>
+          </button>
+        )}
+        {referenceText && !isEditing && (
+          <button
+            type="button"
+            data-ocid="reference.clear_button"
+            onClick={onClear}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white hover:bg-white/20 transition-all"
+            style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+        {isEditing && (
+          <>
+            <button
+              type="button"
+              data-ocid="reference.save_button"
+              onClick={() => onSave(draft)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all hover:bg-white/20"
+              style={{ fontSize: "clamp(8px, 1.1vw, 10px)", color: "white" }}
+            >
+              சேமி ✓
+            </button>
+            <button
+              type="button"
+              data-ocid="reference.cancel_button"
+              onClick={() => onSave(referenceText)}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white hover:bg-white/20 transition-all"
+              style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {isEditing ? (
+          <textarea
+            ref={textareaRef}
+            data-ocid="reference.textarea"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="இங்கே வாக்கியங்களை paste செய்யுங்கள்..."
+            className="w-full h-full resize-none tamil-text outline-none px-2 py-1"
+            style={{
+              background: "transparent",
+              fontSize: "clamp(15px, 2.5vw, 26px)",
+              fontWeight: 700,
+              lineHeight: 1.4,
+              color: "oklch(0.2 0.08 280)",
+              minHeight: "40px",
+            }}
+          />
+        ) : (
+          <div
+            data-ocid="reference.display"
+            className="w-full h-full overflow-y-auto px-2 py-1"
+            style={{ wordBreak: "break-all" }}
+          >
+            {referenceText ? (
+              <p
+                className="tamil-text"
+                style={{
+                  fontSize: "clamp(15px, 2.5vw, 26px)",
+                  lineHeight: 1.4,
+                  color: "oklch(0.2 0.08 280)",
+                  fontWeight: 700,
+                }}
+              >
+                {referenceText}
+              </p>
+            ) : (
+              <p
+                className="tamil-text"
+                style={{
+                  fontSize: "clamp(10px, 1.5vw, 14px)",
+                  color: "oklch(0.65 0.08 280)",
+                  fontStyle: "italic",
+                }}
+              >
+                மேலே உள்ள &quot;தட்டு / Paste&quot; பட்டனை அழுத்தி வாக்கியங்களை
+                சேர்க்கவும்
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── KEYBOARD ROW ──────────────────────────────────────────────────────────────────
+
+// Left panel vowel column background colors (warm palette, table-like)
+const LEFT_COL_BG = [
+  "oklch(0.94 0.09 70)", // col 0 — warm peach
+  "oklch(0.91 0.11 60)", // col 1 — slightly deeper orange
+  "oklch(0.94 0.09 80)", // col 2 — warm yellow
+];
+const LEFT_COL_BG_ACTIVE = [
+  "oklch(0.82 0.18 275)",
+  "oklch(0.78 0.20 275)",
+  "oklch(0.82 0.18 275)",
+];
+
+// Consonant column background colors (teal/mint alternating)
+const CONS_COL_BG = [
+  "oklch(0.94 0.08 195)",
+  "oklch(0.90 0.10 190)",
+  "oklch(0.94 0.08 195)",
+  "oklch(0.90 0.10 190)",
+  "oklch(0.94 0.08 195)",
+  "oklch(0.90 0.10 190)",
+];
 
 interface KeyRowProps {
   rowIdx: number;
@@ -213,39 +460,55 @@ function KeyRow({
   onConsonant,
   onBackspace,
 }: KeyRowProps) {
-  const leftKeyStyle = (active: boolean): React.CSSProperties => ({
-    background: active ? "oklch(0.88 0.18 275)" : "oklch(0.98 0.1 88)",
-    color: active ? "oklch(0.15 0.1 270)" : "oklch(0.3 0.12 55)",
-    border: `1.5px solid ${active ? "oklch(0.72 0.2 275)" : "oklch(0.8 0.16 80)"}`,
-    fontWeight: 700,
-  });
+  const leftTotal = 3;
 
-  const consonantKeyStyle = (
-    root: string | null,
+  const leftKeyBg = (colIdx: number, active: boolean) =>
+    active ? LEFT_COL_BG_ACTIVE[colIdx] : LEFT_COL_BG[colIdx];
+
+  const leftKeyColor = (active: boolean) =>
+    active ? "oklch(0.15 0.1 270)" : "oklch(0.3 0.12 55)";
+
+  const consonantBg = (
+    colIdx: number,
     isSelected: boolean,
-  ): React.CSSProperties => ({
-    background: isSelected
-      ? "oklch(0.62 0.22 25)"
-      : root === null
-        ? "oklch(0.65 0.22 30)"
-        : "oklch(0.97 0.07 185)",
-    color: isSelected || root === null ? "white" : "oklch(0.22 0.1 200)",
-    border: `1.5px solid ${
-      isSelected
-        ? "oklch(0.52 0.2 25)"
-        : root === null
-          ? "oklch(0.52 0.2 28)"
-          : "oklch(0.76 0.14 185)"
-    }`,
-    fontWeight: 700,
-    transform: isSelected ? "translateY(1px)" : undefined,
-    boxShadow: isSelected ? "none" : undefined,
-  });
+    isNull: boolean,
+  ) => {
+    if (isSelected) return "oklch(0.62 0.22 25)";
+    if (isNull) return "oklch(0.65 0.22 30)";
+    return CONS_COL_BG[colIdx] ?? "oklch(0.94 0.08 195)";
+  };
+
+  const consonantColor = (isSelected: boolean, isNull: boolean) => {
+    if (isSelected || isNull) return "white";
+    return "oklch(0.22 0.1 200)";
+  };
+
+  const rowIsFirst = rowIdx === 0;
+  const rowIsLast = rowIdx === CONSONANT_GRID.length - 1;
+
+  const cornerRadiusLeft = {
+    borderTopLeftRadius: rowIsFirst ? "10px" : "0",
+    borderBottomLeftRadius: rowIsLast ? "10px" : "0",
+  };
+  const cornerRadiusRight = {
+    borderTopRightRadius: rowIsFirst ? "10px" : "0",
+    borderBottomRightRadius: rowIsLast ? "10px" : "0",
+  };
 
   return (
-    <div className="flex gap-1 flex-1">
+    <div
+      className="flex flex-1"
+      style={{
+        borderBottom: rowIsLast
+          ? "none"
+          : "1px solid oklch(0.78 0.08 180 / 0.6)",
+      }}
+    >
+      {/* Left vowel/combo panel */}
       {[0, 1, 2].map((colIdx) => {
         const cell = leftCells[colIdx] ?? null;
+        const isFirst = colIdx === 0;
+        const isLastInLeft = colIdx === leftTotal - 1;
         return (
           <button
             key={`left-col-${colIdx}`}
@@ -253,13 +516,19 @@ function KeyRow({
             data-ocid={`keyboard.left_key.${rowIdx * 3 + colIdx + 1}`}
             onClick={() => onLeftKey(rowIdx, colIdx)}
             disabled={!cell}
-            className="flex-1 flex items-center justify-center rounded-xl tamil-text
-              shadow-key active:shadow-key-active active:translate-y-px
+            className="flex-1 flex items-center justify-center tamil-text
+              active:brightness-90
               transition-all duration-75 select-none cursor-pointer
               disabled:opacity-30 disabled:cursor-default"
             style={{
-              ...leftKeyStyle(isComboMode),
-              fontSize: "clamp(13px, 2.2vw, 22px)",
+              background: leftKeyBg(colIdx, isComboMode),
+              color: leftKeyColor(isComboMode),
+              fontWeight: 700,
+              fontSize: "clamp(15px, 2.6vw, 26px)",
+              borderRight: isLastInLeft
+                ? "none"
+                : "1px solid oklch(0.82 0.12 70 / 0.7)",
+              ...(isFirst ? cornerRadiusLeft : {}),
             }}
           >
             {cell ?? ""}
@@ -267,43 +536,268 @@ function KeyRow({
         );
       })}
 
+      {/* Vertical divider between left and right panels */}
       <div
-        className="w-px flex-none"
-        style={{ background: "oklch(0.8 0.08 200)" }}
+        className="flex-none"
+        style={{ width: "3px", background: "oklch(0.72 0.14 180 / 0.8)" }}
       />
 
-      {consonants.map((root) =>
-        root === null ? (
-          <button
-            key="backspace"
-            type="button"
-            data-ocid="keyboard.backspace_button"
-            onClick={onBackspace}
-            className="flex-1 flex items-center justify-center rounded-xl
-              shadow-key active:shadow-key-active active:translate-y-px
-              transition-all duration-75 select-none cursor-pointer"
-            style={consonantKeyStyle(null, false)}
-          >
-            <Delete className="w-4 h-4" />
-          </button>
-        ) : (
+      {/* Right consonant panel */}
+      {consonants.map((root, colIdx) => {
+        const isSelected = selectedConsonant === root;
+        const isNull = root === null;
+        const isLastInRight = colIdx === consonants.length - 1;
+
+        if (isNull) {
+          return (
+            <button
+              key="backspace"
+              type="button"
+              data-ocid="keyboard.backspace_button"
+              onClick={onBackspace}
+              className="flex-1 flex items-center justify-center
+                active:brightness-90
+                transition-all duration-75 select-none cursor-pointer"
+              style={{
+                background: "oklch(0.65 0.22 30)",
+                color: "white",
+                ...(isLastInRight ? cornerRadiusRight : {}),
+              }}
+            >
+              <Delete className="w-5 h-5" />
+            </button>
+          );
+        }
+
+        return (
           <button
             key={root}
             type="button"
             data-ocid={`keyboard.consonant_key.${root}`}
             onClick={() => onConsonant(root)}
-            className="flex-1 flex items-center justify-center rounded-xl tamil-text
-              shadow-key active:shadow-key-active active:translate-y-px
+            className="flex-1 flex items-center justify-center tamil-text
+              active:brightness-90
               transition-all duration-75 select-none cursor-pointer"
             style={{
-              ...consonantKeyStyle(root, selectedConsonant === root),
-              fontSize: "clamp(12px, 2vw, 20px)",
+              background: consonantBg(colIdx, isSelected, false),
+              color: consonantColor(isSelected, false),
+              fontWeight: 700,
+              fontSize: "clamp(15px, 2.6vw, 26px)",
+              borderLeft:
+                colIdx === 0 ? "none" : "1px solid oklch(0.82 0.08 190 / 0.6)",
+              transform: isSelected ? "scale(0.97)" : undefined,
+              ...(isLastInRight ? cornerRadiusRight : {}),
             }}
           >
             {root}
           </button>
-        ),
-      )}
+        );
+      })}
+    </div>
+  );
+}
+
+// ── ENGLISH KEYBOARD COMPONENT ────────────────────────────────────────────────
+
+interface EnglishKeyboardProps {
+  isShift: boolean;
+  onKey: (char: string) => void;
+  onBackspace: () => void;
+  onToggleShift: () => void;
+}
+
+function EnglishKeyboard({
+  isShift,
+  onKey,
+  onBackspace,
+  onToggleShift,
+}: EnglishKeyboardProps) {
+  const transform = (k: string) => (isShift ? k : k.toLowerCase());
+
+  const renderRow = (
+    keys: string[],
+    rowIdx: number,
+    extraRight?: React.ReactNode,
+  ) => (
+    <div
+      key={`en-row-${rowIdx}`}
+      className="flex flex-1"
+      style={{
+        borderBottom:
+          rowIdx < 2 ? "1px solid oklch(0.80 0.06 220 / 0.5)" : "none",
+      }}
+    >
+      {keys.map((k, colIdx) => (
+        <button
+          key={k}
+          type="button"
+          data-ocid={`keyboard.en_key.${rowIdx * 10 + colIdx + 1}`}
+          onClick={() => onKey(transform(k))}
+          className="flex-1 flex items-center justify-center font-bold
+            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+          style={{
+            background: EN_ROW_COLORS[rowIdx] ?? EN_ROW_COLORS[0],
+            color: EN_ROW_TEXT[rowIdx] ?? EN_ROW_TEXT[0],
+            fontSize: "clamp(13px, 2.2vw, 22px)",
+            borderLeft:
+              colIdx === 0 ? "none" : "1px solid oklch(0.82 0.06 230 / 0.5)",
+          }}
+        >
+          {transform(k)}
+        </button>
+      ))}
+      {extraRight}
+    </div>
+  );
+
+  return (
+    <div
+      className="flex flex-col h-full"
+      style={{
+        border: "2px solid oklch(0.72 0.10 220)",
+        borderRadius: "10px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Row 1: Q–P */}
+      {renderRow(EN_ROW1, 0)}
+      {/* Row 2: A–L */}
+      {renderRow(EN_ROW2, 1)}
+      {/* Row 3: Shift + Z–M + Backspace */}
+      <div className="flex flex-1">
+        <button
+          type="button"
+          data-ocid="keyboard.en_shift_button"
+          onClick={onToggleShift}
+          className="flex items-center justify-center font-bold
+            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+          style={{
+            background: isShift
+              ? "oklch(0.62 0.22 250)"
+              : "oklch(0.82 0.10 60)",
+            color: isShift ? "white" : "oklch(0.25 0.14 45)",
+            fontSize: "clamp(11px, 1.8vw, 17px)",
+            minWidth: "clamp(36px, 6%, 58px)",
+            borderRight: "1px solid oklch(0.78 0.08 60 / 0.5)",
+            borderBottomLeftRadius: "8px",
+          }}
+        >
+          ⇧
+        </button>
+        {EN_ROW3.map((k, colIdx) => (
+          <button
+            key={k}
+            type="button"
+            data-ocid={`keyboard.en_key.${20 + colIdx + 1}`}
+            onClick={() => onKey(transform(k))}
+            className="flex-1 flex items-center justify-center font-bold
+              active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+            style={{
+              background: EN_ROW_COLORS[2],
+              color: EN_ROW_TEXT[2],
+              fontSize: "clamp(13px, 2.2vw, 22px)",
+              borderLeft: "1px solid oklch(0.82 0.08 60 / 0.5)",
+            }}
+          >
+            {transform(k)}
+          </button>
+        ))}
+        <button
+          type="button"
+          data-ocid="keyboard.en_backspace_button"
+          onClick={onBackspace}
+          className="flex items-center justify-center
+            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+          style={{
+            background: "oklch(0.65 0.22 30)",
+            color: "white",
+            minWidth: "clamp(36px, 6%, 58px)",
+            borderLeft: "1px solid oklch(0.55 0.2 30 / 0.5)",
+            borderBottomRightRadius: "8px",
+          }}
+        >
+          <Delete className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── NUMBERS KEYBOARD COMPONENT ────────────────────────────────────────────────
+
+interface NumbersKeyboardProps {
+  onKey: (char: string) => void;
+  onBackspace: () => void;
+}
+
+function NumbersKeyboard({ onKey, onBackspace }: NumbersKeyboardProps) {
+  const rows = [NUM_ROW1, NUM_ROW2, NUM_ROW3];
+
+  return (
+    <div
+      className="flex flex-col h-full"
+      style={{
+        border: "2px solid oklch(0.72 0.10 300)",
+        borderRadius: "10px",
+        overflow: "hidden",
+      }}
+    >
+      {rows.map((row, rowIdx) => (
+        <div
+          key={`num-row-${row[0]}`}
+          className="flex flex-1"
+          style={{
+            borderBottom:
+              rowIdx < 2 ? "1px solid oklch(0.80 0.06 300 / 0.5)" : "none",
+          }}
+        >
+          {row.map((k, colIdx) => (
+            <button
+              key={k}
+              type="button"
+              data-ocid={`keyboard.num_key.${rowIdx * 10 + colIdx + 1}`}
+              onClick={() => onKey(k)}
+              className="flex-1 flex items-center justify-center font-bold
+                active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+              style={{
+                background: NUM_ROW_COLORS[rowIdx] ?? NUM_ROW_COLORS[0],
+                color: NUM_ROW_TEXT[rowIdx] ?? NUM_ROW_TEXT[0],
+                fontSize: "clamp(13px, 2.2vw, 22px)",
+                borderLeft:
+                  colIdx === 0
+                    ? "none"
+                    : "1px solid oklch(0.82 0.06 290 / 0.5)",
+                ...(rowIdx === 0 && colIdx === 0
+                  ? { borderTopLeftRadius: "8px" }
+                  : {}),
+                ...(rowIdx === 0 && colIdx === row.length - 1
+                  ? { borderTopRightRadius: "8px" }
+                  : {}),
+              }}
+            >
+              {k}
+            </button>
+          ))}
+          {rowIdx === 2 && (
+            <button
+              type="button"
+              data-ocid="keyboard.num_backspace_button"
+              onClick={onBackspace}
+              className="flex items-center justify-center
+                active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+              style={{
+                background: "oklch(0.65 0.22 30)",
+                color: "white",
+                minWidth: "clamp(36px, 6%, 58px)",
+                borderLeft: "1px solid oklch(0.55 0.2 30 / 0.5)",
+                borderBottomRightRadius: "8px",
+              }}
+            >
+              <Delete className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -319,6 +813,10 @@ export default function App() {
   const [selectedConsonant, setSelectedConsonant] = useState<string | null>(
     null,
   );
+  const [referenceText, setReferenceText] = useState("");
+  const [isEditingReference, setIsEditingReference] = useState(false);
+  const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>("tamil");
+  const [isShift, setIsShift] = useState(true);
   const pendingRootRef = useRef<string | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textScrollRef = useRef<HTMLDivElement>(null);
@@ -354,9 +852,9 @@ export default function App() {
   }, []);
 
   const fireChar = useCallback(
-    (char: string) => {
+    (char: string, lang?: string) => {
       setText((prev) => prev + char);
-      if (soundOn) speak(char);
+      if (soundOn) speak(char, lang);
       showFlash(char);
     },
     [soundOn, speak, showFlash],
@@ -450,6 +948,42 @@ export default function App() {
     window.speechSynthesis.speak(utt);
   }, [text, isListening]);
 
+  const handleReferenceSave = useCallback((val: string) => {
+    setReferenceText(val);
+    setIsEditingReference(false);
+  }, []);
+
+  const handleReferenceClear = useCallback(() => {
+    setReferenceText("");
+    setIsEditingReference(false);
+  }, []);
+
+  const switchMode = useCallback(() => {
+    setKeyboardMode((prev) => {
+      const next = nextMode(prev);
+      // reset consonant state when leaving Tamil mode
+      setSelectedConsonant(null);
+      pendingRootRef.current = null;
+      return next;
+    });
+  }, []);
+
+  const handleEnglishKey = useCallback(
+    (char: string) => {
+      fireChar(char, "en-US");
+      // auto-lower after typing in uppercase
+      if (isShift) setIsShift(false);
+    },
+    [fireChar, isShift],
+  );
+
+  const handleNumberKey = useCallback(
+    (char: string) => {
+      fireChar(char, "en-US");
+    },
+    [fireChar],
+  );
+
   const year = new Date().getFullYear();
 
   const leftCells: (string | null)[][] = selectedConsonant
@@ -460,6 +994,29 @@ export default function App() {
         );
       })()
     : VOWEL_GRID;
+
+  // Bottom action row shared buttons
+  const langToggleButton = (
+    <button
+      key="lang-toggle"
+      type="button"
+      data-ocid="keyboard.lang_toggle"
+      onClick={switchMode}
+      className="flex items-center justify-center font-bold
+        active:brightness-90
+        transition-all duration-75 select-none cursor-pointer"
+      style={{
+        background: "oklch(0.75 0.18 50)",
+        color: "white",
+        fontSize: "clamp(11px, 1.8vw, 16px)",
+        minWidth: "clamp(36px, 6.5%, 58px)",
+        borderRight: "1px solid oklch(0.62 0.16 50 / 0.6)",
+        borderBottomLeftRadius: "8px",
+      }}
+    >
+      {modeLabel(keyboardMode)}
+    </button>
+  );
 
   return (
     <div
@@ -593,6 +1150,15 @@ export default function App() {
         </motion.button>
       </header>
 
+      {/* ── REFERENCE TEXT BOX ── */}
+      <ReferenceBox
+        referenceText={referenceText}
+        isEditing={isEditingReference}
+        onEdit={() => setIsEditingReference(true)}
+        onSave={handleReferenceSave}
+        onClear={handleReferenceClear}
+      />
+
       {/* ── MAIN CONTENT ── */}
       <div
         className="flex-1 overflow-hidden flex flex-col"
@@ -600,12 +1166,12 @@ export default function App() {
       >
         {/* Text display */}
         <div
-          className="flex-none flex gap-2 px-2 pt-2 pb-1"
-          style={{ height: "28%" }}
+          className="flex-none flex gap-2 px-2 pt-1 pb-1"
+          style={{ height: "22%" }}
         >
           <div
             className="flex-none"
-            style={{ width: "clamp(80px, 22%, 160px)" }}
+            style={{ width: "clamp(60px, 18%, 130px)" }}
           >
             <FlashCard char={flashChar} flashKey={flashKey} />
           </div>
@@ -646,7 +1212,7 @@ export default function App() {
                     key="text"
                     className="tamil-text"
                     style={{
-                      fontSize: "clamp(16px, 2.8vw, 28px)",
+                      fontSize: "clamp(14px, 2.4vw, 24px)",
                       lineHeight: 1.5,
                       color: "oklch(0.2 0.05 260)",
                     }}
@@ -682,7 +1248,8 @@ export default function App() {
 
         {/* ── KEYBOARD ── */}
         <div className="flex-1 px-2 pb-1" style={{ minHeight: 0 }}>
-          {selectedConsonant && (
+          {/* Tamil mode hint */}
+          {keyboardMode === "tamil" && selectedConsonant && (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -701,89 +1268,258 @@ export default function App() {
             </motion.div>
           )}
 
-          <div className="flex flex-col gap-1 h-full">
-            {CONSONANT_GRID.map((cRow, rowIdx) => (
-              <KeyRow
-                key={ROW_KEYS[rowIdx]}
-                rowIdx={rowIdx}
-                leftCells={leftCells[rowIdx]}
-                consonants={cRow}
-                selectedConsonant={selectedConsonant}
-                isComboMode={!!selectedConsonant}
-                onLeftKey={handleLeftKey}
-                onConsonant={handleConsonant}
-                onBackspace={backspace}
-              />
-            ))}
-
-            {/* Bottom action row */}
+          {/* ── TAMIL KEYBOARD ── */}
+          {keyboardMode === "tamil" && (
             <div
-              className="flex gap-1"
-              style={{ height: "clamp(32px, 8%, 52px)" }}
+              className="flex flex-col h-full"
+              style={{
+                border: "2px solid oklch(0.72 0.12 180)",
+                borderRadius: "10px",
+                overflow: "hidden",
+              }}
             >
-              <button
-                type="button"
-                data-ocid="keyboard.space_button"
-                onClick={() => {
-                  setSelectedConsonant(null);
-                  pendingRootRef.current = null;
-                  setText((prev) => `${prev} `);
-                }}
-                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl
-                  shadow-key active:shadow-key-active active:translate-y-px
-                  transition-all duration-75 select-none cursor-pointer font-bold tamil-text"
+              {CONSONANT_GRID.map((cRow, rowIdx) => (
+                <KeyRow
+                  key={ROW_KEYS[rowIdx]}
+                  rowIdx={rowIdx}
+                  leftCells={leftCells[rowIdx]}
+                  consonants={cRow}
+                  selectedConsonant={selectedConsonant}
+                  isComboMode={!!selectedConsonant}
+                  onLeftKey={handleLeftKey}
+                  onConsonant={handleConsonant}
+                  onBackspace={backspace}
+                />
+              ))}
+
+              {/* Bottom action row */}
+              <div
+                className="flex flex-none"
                 style={{
-                  background: "oklch(0.78 0.16 265)",
-                  color: "white",
-                  border: "1.5px solid oklch(0.62 0.2 260)",
-                  fontSize: "clamp(10px, 1.6vw, 14px)",
+                  height: "clamp(36px, 9%, 56px)",
+                  borderTop: "2px solid oklch(0.72 0.12 180)",
                 }}
               >
-                <span style={{ fontSize: "1.2em" }}>␣</span> தமிழ்
-              </button>
-              <button
-                type="button"
-                data-ocid="keyboard.aytham_button"
-                onClick={() => {
-                  setSelectedConsonant(null);
-                  pendingRootRef.current = null;
-                  fireChar("ஃ");
-                }}
-                className="flex items-center justify-center rounded-xl tamil-text
-                  shadow-key active:shadow-key-active active:translate-y-px
-                  transition-all duration-75 select-none cursor-pointer font-bold"
-                style={{
-                  background: "oklch(0.78 0.18 265)",
-                  color: "white",
-                  border: "1.5px solid oklch(0.62 0.2 260)",
-                  fontSize: "clamp(13px, 2.2vw, 22px)",
-                  minWidth: "clamp(36px, 7%, 60px)",
-                }}
-              >
-                ஃ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedConsonant(null);
-                  pendingRootRef.current = null;
-                  setText((prev) => `${prev}\n`);
-                }}
-                className="flex items-center justify-center rounded-xl
-                  shadow-key active:shadow-key-active active:translate-y-px
-                  transition-all duration-75 select-none cursor-pointer font-bold"
-                style={{
-                  background: "oklch(0.6 0.18 160)",
-                  color: "white",
-                  border: "1.5px solid oklch(0.48 0.17 160)",
-                  fontSize: "clamp(12px, 2vw, 18px)",
-                  minWidth: "clamp(44px, 9%, 72px)",
-                }}
-              >
-                ↵
-              </button>
+                {langToggleButton}
+                <button
+                  type="button"
+                  data-ocid="keyboard.period_button"
+                  onClick={() => fireChar(".")}
+                  className="flex items-center justify-center
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.75 0.14 250)",
+                    color: "white",
+                    fontSize: "clamp(16px, 2.4vw, 24px)",
+                    minWidth: "clamp(40px, 7%, 64px)",
+                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                  }}
+                >
+                  .
+                </button>
+                <button
+                  type="button"
+                  data-ocid="keyboard.comma_button"
+                  onClick={() => fireChar(",")}
+                  className="flex items-center justify-center
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.75 0.14 250)",
+                    color: "white",
+                    fontSize: "clamp(16px, 2.4vw, 24px)",
+                    minWidth: "clamp(40px, 7%, 64px)",
+                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                  }}
+                >
+                  ,
+                </button>
+                <button
+                  type="button"
+                  data-ocid="keyboard.space_button"
+                  onClick={() => {
+                    setSelectedConsonant(null);
+                    pendingRootRef.current = null;
+                    setText((prev) => `${prev} `);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold tamil-text"
+                  style={{
+                    background: "oklch(0.78 0.16 265)",
+                    color: "white",
+                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                  }}
+                >
+                  <span style={{ fontSize: "1.2em" }}>␣</span> சரவணன் பர்வித்
+                  அதிதீரன்
+                </button>
+                <button
+                  type="button"
+                  data-ocid="keyboard.aytham_button"
+                  onClick={() => {
+                    setSelectedConsonant(null);
+                    pendingRootRef.current = null;
+                    fireChar("ஃ");
+                  }}
+                  className="flex items-center justify-center tamil-text
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.78 0.18 265)",
+                    color: "white",
+                    fontSize: "clamp(15px, 2.4vw, 24px)",
+                    minWidth: "clamp(40px, 8%, 64px)",
+                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                  }}
+                >
+                  ஃ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedConsonant(null);
+                    pendingRootRef.current = null;
+                    setText((prev) => `${prev}\n`);
+                  }}
+                  className="flex items-center justify-center
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.6 0.18 160)",
+                    color: "white",
+                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    minWidth: "clamp(48px, 10%, 80px)",
+                    borderBottomRightRadius: "8px",
+                  }}
+                >
+                  ↵
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── ENGLISH KEYBOARD ── */}
+          {keyboardMode === "english" && (
+            <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
+              <div className="flex-1" style={{ minHeight: 0 }}>
+                <EnglishKeyboard
+                  isShift={isShift}
+                  onKey={handleEnglishKey}
+                  onBackspace={backspace}
+                  onToggleShift={() => setIsShift((s) => !s)}
+                />
+              </div>
+              {/* English bottom action row */}
+              <div
+                className="flex flex-none mt-0"
+                style={{
+                  height: "clamp(36px, 9%, 56px)",
+                  border: "2px solid oklch(0.72 0.10 220)",
+                  borderTop: "none",
+                  borderBottomLeftRadius: "10px",
+                  borderBottomRightRadius: "10px",
+                  overflow: "hidden",
+                  marginTop: "-2px",
+                }}
+              >
+                {langToggleButton}
+                <button
+                  type="button"
+                  data-ocid="keyboard.en_space_button"
+                  onClick={() => setText((prev) => `${prev} `)}
+                  className="flex-1 flex items-center justify-center gap-1.5
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.78 0.10 220)",
+                    color: "white",
+                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    borderRight: "1px solid oklch(0.65 0.10 220 / 0.6)",
+                  }}
+                >
+                  <span style={{ fontSize: "1.2em" }}>␣</span> Space
+                </button>
+                <button
+                  type="button"
+                  data-ocid="keyboard.en_enter_button"
+                  onClick={() => setText((prev) => `${prev}\n`)}
+                  className="flex items-center justify-center
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.6 0.18 160)",
+                    color: "white",
+                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    minWidth: "clamp(48px, 10%, 80px)",
+                  }}
+                >
+                  ↵
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── NUMBERS KEYBOARD ── */}
+          {keyboardMode === "numbers" && (
+            <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
+              <div className="flex-1" style={{ minHeight: 0 }}>
+                <NumbersKeyboard
+                  onKey={handleNumberKey}
+                  onBackspace={backspace}
+                />
+              </div>
+              {/* Numbers bottom action row */}
+              <div
+                className="flex flex-none"
+                style={{
+                  height: "clamp(36px, 9%, 56px)",
+                  border: "2px solid oklch(0.72 0.10 300)",
+                  borderTop: "none",
+                  borderBottomLeftRadius: "10px",
+                  borderBottomRightRadius: "10px",
+                  overflow: "hidden",
+                  marginTop: "-2px",
+                }}
+              >
+                {langToggleButton}
+                <button
+                  type="button"
+                  data-ocid="keyboard.num_space_button"
+                  onClick={() => setText((prev) => `${prev} `)}
+                  className="flex-1 flex items-center justify-center gap-1.5
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.78 0.10 300)",
+                    color: "white",
+                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    borderRight: "1px solid oklch(0.65 0.10 300 / 0.6)",
+                  }}
+                >
+                  <span style={{ fontSize: "1.2em" }}>␣</span> Space
+                </button>
+                <button
+                  type="button"
+                  data-ocid="keyboard.num_enter_button"
+                  onClick={() => setText((prev) => `${prev}\n`)}
+                  className="flex items-center justify-center
+                    active:brightness-90
+                    transition-all duration-75 select-none cursor-pointer font-bold"
+                  style={{
+                    background: "oklch(0.6 0.18 160)",
+                    color: "white",
+                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    minWidth: "clamp(48px, 10%, 80px)",
+                  }}
+                >
+                  ↵
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div
