@@ -488,23 +488,26 @@ function FlyingLetter({
 
 // ── SPEECH ────────────────────────────────────────────────────────────────────
 
-const VIRAMA = "\u0BCD"; // ்
-
-const NGA_PRONUNCIATIONS: Record<string, { text: string; lang: string }> = {
-  "\u0B99": { text: "nga.", lang: "en-US" },
-  "\u0B99\u0BCD": { text: "ng.", lang: "en-US" },
-  "\u0B99\u0BBE": { text: "ngaa.", lang: "en-US" },
-  "\u0B99\u0BBF": { text: "ngi.", lang: "en-US" },
-  "\u0B99\u0BC0": { text: "ngii.", lang: "en-US" },
-  "\u0B99\u0BC1": { text: "ngu.", lang: "en-US" },
-  "\u0B99\u0BC2": { text: "nguu.", lang: "en-US" },
-  "\u0B99\u0BC6": { text: "nge.", lang: "en-US" },
-  "\u0B99\u0BC7": { text: "ngee.", lang: "en-US" },
-  "\u0B99\u0BC8": { text: "ngai.", lang: "en-US" },
-  "\u0B99\u0BCA": { text: "ngo.", lang: "en-US" },
-  "\u0B99\u0BCB": { text: "ngoo.", lang: "en-US" },
-  "\u0B99\u0BCC": { text: "ngau.", lang: "en-US" },
-};
+// English-TTS pronunciations for the NG (U+0B99) series
+// Uses codePoint comparison to avoid any string-encoding ambiguity
+function getNgaEnglish(normalized: string): string | null {
+  if (normalized.codePointAt(0) !== 0x0b99) return null; // not NG
+  const cp1 = normalized.codePointAt(1);
+  if (cp1 === undefined) return "Nga"; // standalone NG
+  if (cp1 === 0x0bcd) return "Nga"; // NG + virama (pure consonant)
+  if (cp1 === 0x0bbe) return "Ngaa"; // NGaa
+  if (cp1 === 0x0bbf) return "Ngi"; // NGi
+  if (cp1 === 0x0bc0) return "Ngii"; // NGii
+  if (cp1 === 0x0bc1) return "Ngu"; // NGu
+  if (cp1 === 0x0bc2) return "Nguu"; // NGuu
+  if (cp1 === 0x0bc6) return "Nge"; // NGe
+  if (cp1 === 0x0bc7) return "Ngee"; // NGee
+  if (cp1 === 0x0bc8) return "Ngai"; // NGai
+  if (cp1 === 0x0bca) return "Ngo"; // NGo
+  if (cp1 === 0x0bcb) return "Ngoo"; // NGoo
+  if (cp1 === 0x0bcc) return "Ngau"; // NGau
+  return null;
+}
 
 function getPronunciation(char: string): {
   text: string;
@@ -512,13 +515,12 @@ function getPronunciation(char: string): {
   rate?: number;
 } {
   const normalized = char.normalize("NFC");
-  if (normalized in NGA_PRONUNCIATIONS) {
-    return { ...NGA_PRONUNCIATIONS[normalized], rate: 0.75 };
+  // Use English TTS for NG (U+0B99) series - codePoint-based to avoid encoding issues
+  const ngaText = getNgaEnglish(normalized);
+  if (ngaText !== null) {
+    return { text: ngaText, lang: "en-US", rate: 0.75 };
   }
-  if (normalized.endsWith(VIRAMA)) {
-    return { text: normalized.slice(0, normalized.length - 1), lang: "ta-IN" };
-  }
-  return { text: normalized, lang: "ta-IN" };
+  return { text: normalized, lang: "ta-IN", rate: 0.85 };
 }
 
 function useSpeech() {
