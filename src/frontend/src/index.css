@@ -92,20 +92,6 @@
   }
 }
 
-/* Force landscape orientation by rotating portrait displays */
-@media screen and (orientation: portrait) {
-  html {
-    transform: rotate(90deg);
-    transform-origin: left top;
-    width: 100vh;
-    height: 100vw;
-    overflow: hidden;
-    position: absolute;
-    top: 100%;
-    left: 0;
-  }
-}
-
 /* Tamil script rendering */
 .tamil-text {
   font-family: "Noto Sans Tamil", sans-serif;
@@ -160,4 +146,11 @@
 }
 .listen-pulse {
   animation: bounce-glow 1.2s infinite;
+}
+
+/* Portrait-only: show warning in landscape on small/medium screens */
+@media (orientation: landscape) and (max-height: 600px) {
+  .landscape-warning {
+    display: flex !important;
+  }
 }

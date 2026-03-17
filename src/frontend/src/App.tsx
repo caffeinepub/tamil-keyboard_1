@@ -204,7 +204,7 @@ function FallingApple({
         position: "fixed",
         left: 0,
         top: 0,
-        fontSize: "clamp(24px, 3.5vw, 40px)",
+        fontSize: "clamp(24px, 5vmin, 40px)",
         pointerEvents: "none",
         zIndex: 9999,
         transformOrigin: "center",
@@ -326,7 +326,7 @@ function WanderingMonkey({
         position: "absolute",
         bottom: 2,
         left: `${posX}%`,
-        fontSize: "clamp(36px, 5vw, 54px)",
+        fontSize: "clamp(30px, 7vmin, 54px)",
         pointerEvents: "none",
         zIndex: 10,
         userSelect: "none",
@@ -379,7 +379,7 @@ function FallingFire({
         position: "fixed",
         left: 0,
         top: 0,
-        fontSize: "clamp(28px, 4vw, 48px)",
+        fontSize: "clamp(26px, 6vmin, 48px)",
         pointerEvents: "none",
         zIndex: 9999,
         transformOrigin: "center",
@@ -414,7 +414,7 @@ function GrapeBunch({ count }: { count: number }) {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          width: "clamp(36px, 4.5vw, 54px)",
+          width: "clamp(36px, 6vmin, 54px)",
           justifyContent: "center",
         }}
       >
@@ -426,7 +426,7 @@ function GrapeBunch({ count }: { count: number }) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              style={{ fontSize: "clamp(10px, 1.4vw, 16px)", lineHeight: 1 }}
+              style={{ fontSize: "clamp(12px, 2.5vmin, 16px)", lineHeight: 1 }}
             >
               🍇
             </motion.span>
@@ -469,7 +469,7 @@ function FlyingLetter({
         position: "fixed",
         left: 0,
         top: 0,
-        fontSize: "clamp(32px, 5vw, 56px)",
+        fontSize: "clamp(28px, 7vmin, 56px)",
         fontWeight: 900,
         color: "oklch(0.55 0.28 25)",
         pointerEvents: "none",
@@ -597,7 +597,7 @@ function ReferenceBox({
         borderRadius: "12px",
         margin: "2px 4px 2px",
         overflow: "hidden",
-        height: "22%",
+        height: "19%",
         flex: "none",
       }}
     >
@@ -611,7 +611,7 @@ function ReferenceBox({
       >
         <span
           className="tamil-text font-bold flex-1"
-          style={{ fontSize: "clamp(9px, 1.2vw, 11px)", color: "white" }}
+          style={{ fontSize: "clamp(11px, 2vmin, 13px)", color: "white" }}
         >
           📖 பார்க்க வேண்டிய வாக்கியம்
         </span>
@@ -623,7 +623,7 @@ function ReferenceBox({
               onClick={onNextPreset}
               className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
               style={{
-                fontSize: "clamp(8px, 1.1vw, 10px)",
+                fontSize: "clamp(10px, 1.8vmin, 13px)",
                 background: "oklch(0.55 0.18 140 / 0.5)",
               }}
               title="அடுத்த வாக்கியம்"
@@ -637,7 +637,7 @@ function ReferenceBox({
               data-ocid="reference.edit_button"
               onClick={onEdit}
               className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
-              style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+              style={{ fontSize: "clamp(10px, 1.8vmin, 13px)" }}
             >
               <Edit3 className="w-3 h-3" />
               <span>தட்டு / Paste</span>
@@ -650,7 +650,7 @@ function ReferenceBox({
             data-ocid="reference.clear_button"
             onClick={onClear}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white hover:bg-white/20 transition-all"
-            style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+            style={{ fontSize: "clamp(10px, 1.8vmin, 13px)" }}
           >
             <X className="w-3 h-3" />
           </button>
@@ -662,7 +662,7 @@ function ReferenceBox({
               data-ocid="reference.save_button"
               onClick={() => onSave(draft)}
               className="flex items-center gap-1 px-2 py-0.5 rounded font-bold transition-all hover:bg-white/20"
-              style={{ fontSize: "clamp(8px, 1.1vw, 10px)", color: "white" }}
+              style={{ fontSize: "clamp(10px, 1.8vmin, 13px)", color: "white" }}
             >
               சேமி ✓
             </button>
@@ -671,7 +671,7 @@ function ReferenceBox({
               data-ocid="reference.cancel_button"
               onClick={() => onSave(referenceText)}
               className="flex items-center gap-1 px-1.5 py-0.5 rounded text-white hover:bg-white/20 transition-all"
-              style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+              style={{ fontSize: "clamp(10px, 1.8vmin, 13px)" }}
             >
               <X className="w-3 h-3" />
             </button>
@@ -692,7 +692,7 @@ function ReferenceBox({
             className="w-full h-full resize-none tamil-text outline-none px-2 py-1"
             style={{
               background: "transparent",
-              fontSize: "clamp(15px, 2.5vw, 26px)",
+              fontSize: "clamp(14px, 3.5vmin, 22px)",
               fontWeight: 700,
               lineHeight: 1.4,
               color: "oklch(0.2 0.08 280)",
@@ -709,7 +709,7 @@ function ReferenceBox({
               <p
                 className="tamil-text"
                 style={{
-                  fontSize: "clamp(15px, 2.5vw, 26px)",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
                   lineHeight: 1.4,
                   fontWeight: 700,
                   letterSpacing: "0.02em",
@@ -748,7 +748,7 @@ function ReferenceBox({
               <p
                 className="tamil-text"
                 style={{
-                  fontSize: "clamp(10px, 1.5vw, 14px)",
+                  fontSize: "clamp(12px, 2.5vmin, 15px)",
                   color: "oklch(0.65 0.08 280)",
                   fontStyle: "italic",
                 }}
@@ -874,7 +874,7 @@ function KeyRow({
               background: leftKeyBg(colIdx, isComboMode),
               color: leftKeyColor(isComboMode),
               fontWeight: 700,
-              fontSize: "clamp(15px, 2.6vw, 26px)",
+              fontSize: "clamp(16px, 4vmin, 28px)",
               borderRight: isLastInLeft
                 ? "none"
                 : "1px solid oklch(0.82 0.12 70 / 0.7)",
@@ -937,7 +937,7 @@ function KeyRow({
               background: consonantBg(colIdx, isSelected, false),
               color: consonantColor(isSelected, false),
               fontWeight: 700,
-              fontSize: "clamp(15px, 2.6vw, 26px)",
+              fontSize: "clamp(16px, 4vmin, 28px)",
               borderLeft:
                 colIdx === 0 ? "none" : "1px solid oklch(0.82 0.08 190 / 0.6)",
               ...(isLastInRight ? cornerRadiusRight : {}),
@@ -996,7 +996,7 @@ function EnglishKeyboard({
           style={{
             background: EN_ROW_COLORS[rowIdx] ?? EN_ROW_COLORS[0],
             color: EN_ROW_TEXT[rowIdx] ?? EN_ROW_TEXT[0],
-            fontSize: "clamp(13px, 2.2vw, 22px)",
+            fontSize: "clamp(14px, 3.5vmin, 22px)",
             borderLeft:
               colIdx === 0 ? "none" : "1px solid oklch(0.82 0.06 230 / 0.5)",
           }}
@@ -1034,7 +1034,7 @@ function EnglishKeyboard({
               ? "oklch(0.62 0.22 250)"
               : "oklch(0.82 0.10 60)",
             color: isShift ? "white" : "oklch(0.25 0.14 45)",
-            fontSize: "clamp(11px, 1.8vw, 17px)",
+            fontSize: "clamp(14px, 3vmin, 19px)",
             minWidth: "clamp(36px, 6%, 58px)",
             borderRight: "1px solid oklch(0.78 0.08 60 / 0.5)",
             borderBottomLeftRadius: "8px",
@@ -1057,7 +1057,7 @@ function EnglishKeyboard({
             style={{
               background: EN_ROW_COLORS[2],
               color: EN_ROW_TEXT[2],
-              fontSize: "clamp(13px, 2.2vw, 22px)",
+              fontSize: "clamp(14px, 3.5vmin, 22px)",
               borderLeft: "1px solid oklch(0.82 0.08 60 / 0.5)",
             }}
           >
@@ -1128,7 +1128,7 @@ function NumbersKeyboard({ onKey, onBackspace }: NumbersKeyboardProps) {
               style={{
                 background: NUM_ROW_COLORS[rowIdx] ?? NUM_ROW_COLORS[0],
                 color: NUM_ROW_TEXT[rowIdx] ?? NUM_ROW_TEXT[0],
-                fontSize: "clamp(13px, 2.2vw, 22px)",
+                fontSize: "clamp(14px, 3.5vmin, 22px)",
                 borderLeft:
                   colIdx === 0
                     ? "none"
@@ -1328,27 +1328,19 @@ export default function App() {
     [nextId, triggerFallingApple, triggerFallingFire],
   );
 
-  useEffect(() => {
-    const orientationAny = screen.orientation as any;
-    if (screen.orientation && typeof orientationAny.lock === "function") {
-      orientationAny.lock("landscape").catch(() => {});
-    }
-    const screenAny = screen as any;
-    if (typeof screenAny.lockOrientation === "function") {
-      screenAny.lockOrientation("landscape");
-    } else if (typeof screenAny.mozLockOrientation === "function") {
-      screenAny.mozLockOrientation("landscape");
-    } else if (typeof screenAny.msLockOrientation === "function") {
-      screenAny.msLockOrientation("landscape");
-    }
-  }, []);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on text change
   useEffect(() => {
     if (textScrollRef.current) {
       textScrollRef.current.scrollLeft = textScrollRef.current.scrollWidth;
     }
   }, [text]);
+
+  // Lock to portrait on all devices
+  useEffect(() => {
+    if ((screen?.orientation as any)?.lock) {
+      (screen.orientation as any).lock("portrait").catch(() => {});
+    }
+  }, []);
 
   const showFlash = useCallback((_char: string) => {}, []);
 
@@ -1580,7 +1572,7 @@ export default function App() {
       style={{
         background: "oklch(0.75 0.18 50)",
         color: "white",
-        fontSize: "clamp(11px, 1.8vw, 16px)",
+        fontSize: "clamp(13px, 3vmin, 18px)",
         minWidth: "clamp(36px, 6.5%, 58px)",
         borderRight: "1px solid oklch(0.62 0.16 50 / 0.6)",
         borderBottomLeftRadius: "8px",
@@ -1595,6 +1587,31 @@ export default function App() {
       className="h-screen w-screen overflow-hidden flex flex-col"
       style={{ background: "oklch(0.97 0.04 95)" }}
     >
+      {/* Landscape warning overlay for small screens */}
+      <div
+        style={{
+          display: "none",
+          position: "fixed",
+          inset: 0,
+          zIndex: 99999,
+          background: "oklch(0.20 0.05 260)",
+          color: "white",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "clamp(18px, 5vmin, 28px)",
+          textAlign: "center",
+          padding: "2rem",
+          gap: "1rem",
+        }}
+        className="landscape-warning"
+      >
+        <div style={{ fontSize: "clamp(40px, 12vmin, 72px)" }}>📱</div>
+        <div style={{ fontWeight: 700 }}>சுழற்றவும் / Rotate Device</div>
+        <div style={{ opacity: 0.8, fontSize: "clamp(14px, 3.5vmin, 20px)" }}>
+          போர்ட்ரைட் பயன்முறையில் பயன்படுத்தவும்
+        </div>
+      </div>
       <Toaster position="top-center" />
 
       {/* ── ANIMATIONS OVERLAY ── */}
@@ -1683,7 +1700,7 @@ export default function App() {
         </motion.span>
         <h1
           className="tamil-text font-bold text-white flex-none"
-          style={{ fontSize: "clamp(12px, 1.8vw, 17px)" }}
+          style={{ fontSize: "clamp(14px, 3vmin, 19px)" }}
         >
           தமிழ் தட்டச்சு
         </h1>
@@ -1694,7 +1711,7 @@ export default function App() {
           onClick={toggleSound}
           aria-label={soundOn ? "Mute" : "Unmute"}
           className="flex-none flex items-center gap-1 px-2 py-1 rounded-lg text-white transition-all hover:bg-white/20 active:bg-white/30"
-          style={{ fontSize: "clamp(10px, 1.5vw, 13px)" }}
+          style={{ fontSize: "clamp(12px, 2.5vmin, 15px)" }}
         >
           <AnimatePresence mode="wait" initial={false}>
             {soundOn ? (
@@ -1726,7 +1743,7 @@ export default function App() {
           onClick={copyToClipboard}
           disabled={!text}
           className="flex-none flex items-center gap-1 px-2 py-1 rounded-lg text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          style={{ fontSize: "clamp(10px, 1.5vw, 13px)" }}
+          style={{ fontSize: "clamp(12px, 2.5vmin, 15px)" }}
         >
           <Copy className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">நகல்</span>
@@ -1738,7 +1755,7 @@ export default function App() {
           onClick={clearAll}
           disabled={!text}
           className="flex-none flex items-center gap-1 px-2 py-1 rounded-lg bg-white/20 text-white hover:bg-white/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          style={{ fontSize: "clamp(10px, 1.5vw, 13px)" }}
+          style={{ fontSize: "clamp(12px, 2.5vmin, 15px)" }}
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">அழி</span>
@@ -1754,7 +1771,7 @@ export default function App() {
             isListening ? "listen-pulse" : ""
           }`}
           style={{
-            fontSize: "clamp(10px, 1.5vw, 14px)",
+            fontSize: "clamp(12px, 2.5vmin, 15px)",
             background: isListening
               ? "oklch(0.55 0.22 330)"
               : "oklch(0.72 0.18 275)",
@@ -1810,7 +1827,7 @@ export default function App() {
         {/* Text display */}
         <div
           className="flex-none flex gap-2 px-1 pt-2 pb-1"
-          style={{ height: "28%" }}
+          style={{ height: "19%" }}
         >
           <div
             className="flex-1 flex flex-col rounded-2xl overflow-hidden"
@@ -1833,7 +1850,7 @@ export default function App() {
               <span
                 className="tamil-text font-bold"
                 style={{
-                  fontSize: "clamp(9px, 1.2vw, 12px)",
+                  fontSize: "clamp(11px, 2vmin, 14px)",
                   color: "oklch(0.25 0.1 200)",
                 }}
               >
@@ -1855,7 +1872,7 @@ export default function App() {
                     key="text"
                     className="tamil-text"
                     style={{
-                      fontSize: "clamp(14px, 2.4vw, 24px)",
+                      fontSize: "clamp(15px, 4vmin, 26px)",
                       lineHeight: 1.5,
                       color: "oklch(0.2 0.05 260)",
                     }}
@@ -1890,7 +1907,7 @@ export default function App() {
                     <p
                       className="tamil-text text-center"
                       style={{
-                        fontSize: "clamp(9px, 1.2vw, 13px)",
+                        fontSize: "clamp(11px, 2vmin, 14px)",
                         color: "oklch(0.7 0.06 250)",
                       }}
                     >
@@ -1918,7 +1935,7 @@ export default function App() {
               className="text-center mb-1 rounded-lg py-0.5"
               style={{
                 background: "oklch(0.88 0.18 275)",
-                fontSize: "clamp(9px, 1.4vw, 12px)",
+                fontSize: "clamp(11px, 2.5vmin, 14px)",
               }}
             >
               <span
@@ -1958,7 +1975,7 @@ export default function App() {
               <div
                 className="flex flex-none"
                 style={{
-                  height: "clamp(36px, 9%, 56px)",
+                  height: "clamp(30px, 7.5%, 48px)",
                   borderTop: "2px solid oklch(0.72 0.12 180)",
                 }}
               >
@@ -1980,7 +1997,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.65 0.22 220)",
                     color: "white",
-                    fontSize: "clamp(16px, 2.4vw, 24px)",
+                    fontSize: "clamp(14px, 3.5vmin, 22px)",
                     minWidth: "clamp(40px, 7%, 64px)",
                     borderRight: "1px solid oklch(0.55 0.22 220 / 0.6)",
                   }}
@@ -2004,7 +2021,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.65 0.22 145)",
                     color: "white",
-                    fontSize: "clamp(16px, 2.4vw, 24px)",
+                    fontSize: "clamp(14px, 3.5vmin, 22px)",
                     minWidth: "clamp(40px, 7%, 64px)",
                     borderRight: "1px solid oklch(0.55 0.22 145 / 0.6)",
                   }}
@@ -2028,7 +2045,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.78 0.16 265)",
                     color: "white",
-                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    fontSize: "clamp(12px, 2.5vmin, 15px)",
                     borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
                   }}
                 >
@@ -2054,7 +2071,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.72 0.20 30)",
                     color: "white",
-                    fontSize: "clamp(15px, 2.4vw, 24px)",
+                    fontSize: "clamp(15px, 4vmin, 26px)",
                     minWidth: "clamp(40px, 8%, 64px)",
                     borderRight: "1px solid oklch(0.60 0.20 30 / 0.6)",
                   }}
@@ -2075,7 +2092,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.55 0.20 145)",
                     color: "white",
-                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    fontSize: "clamp(14px, 3.5vmin, 22px)",
                     minWidth: "clamp(48px, 10%, 80px)",
                     borderBottomRightRadius: "8px",
                   }}
@@ -2101,7 +2118,7 @@ export default function App() {
               <div
                 className="flex flex-none mt-0"
                 style={{
-                  height: "clamp(36px, 9%, 56px)",
+                  height: "clamp(30px, 7.5%, 48px)",
                   border: "2px solid oklch(0.72 0.10 220)",
                   borderTop: "none",
                   borderBottomLeftRadius: "10px",
@@ -2126,7 +2143,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.78 0.10 220)",
                     color: "white",
-                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    fontSize: "clamp(12px, 2.5vmin, 15px)",
                     borderRight: "1px solid oklch(0.65 0.10 220 / 0.6)",
                   }}
                 >
@@ -2143,7 +2160,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.6 0.18 160)",
                     color: "white",
-                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    fontSize: "clamp(14px, 3.5vmin, 22px)",
                     minWidth: "clamp(48px, 10%, 80px)",
                   }}
                 >
@@ -2166,7 +2183,7 @@ export default function App() {
               <div
                 className="flex flex-none"
                 style={{
-                  height: "clamp(36px, 9%, 56px)",
+                  height: "clamp(30px, 7.5%, 48px)",
                   border: "2px solid oklch(0.72 0.10 300)",
                   borderTop: "none",
                   borderBottomLeftRadius: "10px",
@@ -2191,7 +2208,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.78 0.10 300)",
                     color: "white",
-                    fontSize: "clamp(10px, 1.5vw, 14px)",
+                    fontSize: "clamp(12px, 2.5vmin, 15px)",
                     borderRight: "1px solid oklch(0.65 0.10 300 / 0.6)",
                   }}
                 >
@@ -2208,7 +2225,7 @@ export default function App() {
                   style={{
                     background: "oklch(0.6 0.18 160)",
                     color: "white",
-                    fontSize: "clamp(14px, 2.2vw, 20px)",
+                    fontSize: "clamp(14px, 3.5vmin, 22px)",
                     minWidth: "clamp(48px, 10%, 80px)",
                   }}
                 >
@@ -2222,7 +2239,7 @@ export default function App() {
       <footer
         className="flex-none text-center py-0.5"
         style={{
-          fontSize: "clamp(7px, 1vw, 10px)",
+          fontSize: "clamp(9px, 1.8vmin, 12px)",
           color: "oklch(0.6 0.06 50)",
           background: "oklch(0.94 0.03 80)",
         }}
