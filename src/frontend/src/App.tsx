@@ -93,11 +93,10 @@ const EN_ROW1 = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"];
 const EN_ROW2 = ["A", "S", "D", "F", "G", "H", "J", "K", "L"];
 const EN_ROW3 = ["Z", "X", "C", "V", "B", "N", "M"];
 
-// Color palettes for English keyboard — blue/green/orange
 const EN_ROW_COLORS = [
-  "oklch(0.88 0.10 250)", // row 1 — blue
-  "oklch(0.88 0.10 165)", // row 2 — green
-  "oklch(0.88 0.14 60)", // row 3 — orange
+  "oklch(0.88 0.10 250)",
+  "oklch(0.88 0.10 165)",
+  "oklch(0.88 0.14 60)",
 ];
 const EN_ROW_TEXT = [
   "oklch(0.22 0.12 250)",
@@ -112,9 +111,9 @@ const NUM_ROW2 = ["!", "@", "#", "$", "%", "^", "&", "*", "(", ")"];
 const NUM_ROW3 = ["-", "+", "=", "_", "/", "?", ".", ",", ":", ";"];
 
 const NUM_ROW_COLORS = [
-  "oklch(0.90 0.10 320)", // row 1 — pink/purple
-  "oklch(0.88 0.12 280)", // row 2 — purple
-  "oklch(0.88 0.10 220)", // row 3 — blue
+  "oklch(0.90 0.10 320)",
+  "oklch(0.88 0.12 280)",
+  "oklch(0.88 0.10 220)",
 ];
 const NUM_ROW_TEXT = [
   "oklch(0.22 0.12 320)",
@@ -136,6 +135,215 @@ function modeLabel(m: KeyboardMode): string {
   if (m === "tamil") return "த";
   if (m === "english") return "EN";
   return "123";
+}
+
+// ── FIREWORK BURST ANIMATION ──────────────────────────────────────────────────
+
+const PARTICLE_COLORS = [
+  "#FF6B6B",
+  "#FFD93D",
+  "#6BCB77",
+  "#4D96FF",
+  "#FF6BFF",
+  "#FF9A3C",
+  "#FF6BB5",
+  "#00D4AA",
+  "#B48EFF",
+  "#FF4500",
+];
+
+interface BurstItem {
+  id: number;
+  x: number;
+  y: number;
+}
+
+interface FlyingItem {
+  id: number;
+  char: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+function FireworkBurst({
+  burst,
+  onComplete,
+}: {
+  burst: BurstItem;
+  onComplete: (id: number) => void;
+}) {
+  const particleCount = 12;
+  const particles = Array.from({ length: particleCount }, (_, i) => {
+    const angle = (i / particleCount) * 360 + Math.random() * 20 - 10;
+    const distance = 50 + Math.random() * 70;
+    const color = PARTICLE_COLORS[i % PARTICLE_COLORS.length];
+    const size = 8 + Math.random() * 8;
+    return { angle, distance, color, size, id: i };
+  });
+
+  return (
+    <>
+      {particles.map((p, i) => {
+        const rad = (p.angle * Math.PI) / 180;
+        const dx = Math.cos(rad) * p.distance;
+        const dy = Math.sin(rad) * p.distance;
+        return (
+          <motion.div
+            key={p.id}
+            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            animate={{
+              x: dx,
+              y: dy,
+              scale: [1, 1.3, 0],
+              opacity: [1, 1, 0],
+            }}
+            transition={{
+              duration: 0.55,
+              ease: "easeOut",
+              delay: i * 0.008,
+            }}
+            onAnimationComplete={
+              i === 0 ? () => onComplete(burst.id) : undefined
+            }
+            style={{
+              position: "fixed",
+              left: burst.x,
+              top: burst.y,
+              width: p.size,
+              height: p.size,
+              borderRadius: "50%",
+              background: p.color,
+              transform: "translate(-50%, -50%)",
+              pointerEvents: "none",
+              zIndex: 9999,
+              boxShadow: `0 0 6px ${p.color}`,
+            }}
+          />
+        );
+      })}
+      {/* Center flash pop */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0.9 }}
+        animate={{ scale: 2.5, opacity: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        style={{
+          position: "fixed",
+          left: burst.x,
+          top: burst.y,
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "white",
+          transform: "translate(-50%, -50%)",
+          pointerEvents: "none",
+          zIndex: 9999,
+        }}
+      />
+    </>
+  );
+}
+
+function WanderingMonkey({ isJumping }: { isJumping: boolean }) {
+  const [posX, setPosX] = useState(20);
+  const directionRef = useRef(1);
+
+  useEffect(() => {
+    const tick = () => {
+      const d = directionRef.current;
+      setPosX((prev) => {
+        const next = prev + d * (3 + Math.random() * 4);
+        if (next > 85 || next < 5) {
+          directionRef.current = -d;
+          return Math.max(5, Math.min(85, prev));
+        }
+        return next;
+      });
+    };
+    const interval = setInterval(tick, 600 + Math.random() * 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div
+      style={{
+        position: "absolute",
+        bottom: 2,
+        left: `${posX}%`,
+        fontSize: "clamp(14px, 2vw, 20px)",
+        pointerEvents: "none",
+        zIndex: 10,
+        userSelect: "none",
+        lineHeight: 1,
+      }}
+      animate={
+        isJumping
+          ? { y: [-20, 0], rotate: [0, -15, 15, 0], scale: [1.4, 1] }
+          : { y: [0, -3, 0] }
+      }
+      transition={
+        isJumping
+          ? { duration: 0.4, ease: "easeOut" }
+          : {
+              duration: 0.8,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }
+      }
+    >
+      🐒
+    </motion.div>
+  );
+}
+
+function FlyingLetter({
+  item,
+  onComplete,
+}: {
+  item: FlyingItem;
+  onComplete: (id: number) => void;
+}) {
+  return (
+    <motion.div
+      initial={{
+        x: item.startX,
+        y: item.startY,
+        scale: 4.5,
+        opacity: 1,
+        rotate: 0,
+      }}
+      animate={{
+        x: item.endX,
+        y: item.endY,
+        scale: 0.4,
+        opacity: [1, 1, 0],
+        rotate: [0, -10, 10, 0],
+      }}
+      transition={{
+        duration: 0.42,
+        ease: [0.2, 0.8, 0.6, 1],
+      }}
+      onAnimationComplete={() => onComplete(item.id)}
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        fontSize: "clamp(32px, 5vw, 56px)",
+        fontWeight: 900,
+        color: "oklch(0.55 0.28 25)",
+        pointerEvents: "none",
+        zIndex: 9998,
+        transformOrigin: "center",
+        textShadow:
+          "0 2px 8px rgba(255,100,0,0.6), 0 0 20px rgba(255,200,0,0.4)",
+        lineHeight: 1,
+      }}
+      className="tamil-text"
+    >
+      {item.char}
+    </motion.div>
+  );
 }
 
 // ── SPEECH ────────────────────────────────────────────────────────────────────
@@ -186,74 +394,6 @@ function useSpeech() {
     window.speechSynthesis.speak(utt);
   }, []);
   return { speak };
-}
-
-// ── FLASH CARD ────────────────────────────────────────────────────────────────
-
-function FlashCard({ char, flashKey }: { char: string; flashKey: number }) {
-  return (
-    <div
-      data-ocid="keyboard.flashcard"
-      className="relative flex items-center justify-center w-full h-full rounded-2xl overflow-hidden"
-      style={{
-        background: "oklch(0.95 0.12 85)",
-        border: "3px solid oklch(0.82 0.18 75)",
-        boxShadow:
-          "inset 0 2px 8px oklch(0.7 0.15 75 / 0.3), 0 4px 16px oklch(0.7 0.15 75 / 0.2)",
-      }}
-    >
-      <div
-        className="absolute top-2 right-2 w-6 h-6 rounded-full opacity-25"
-        style={{ background: "oklch(0.85 0.2 70)" }}
-      />
-      <AnimatePresence mode="wait">
-        {char ? (
-          <motion.div
-            key={flashKey}
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.6, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="tamil-text font-bold select-none"
-            style={{
-              fontSize: "clamp(48px, 8vw, 120px)",
-              lineHeight: 1,
-              color: "oklch(0.35 0.18 30)",
-              textShadow: "0 3px 0 oklch(0.7 0.18 70 / 0.4)",
-            }}
-          >
-            {char}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center"
-          >
-            <div
-              className="tamil-text select-none"
-              style={{
-                fontSize: "clamp(28px, 5vw, 56px)",
-                color: "oklch(0.65 0.12 75)",
-              }}
-            >
-              அ
-            </div>
-            <p
-              className="tamil-text mt-1"
-              style={{
-                fontSize: "clamp(8px, 1.2vw, 11px)",
-                color: "oklch(0.6 0.08 70)",
-              }}
-            >
-              விசையை அழுத்துங்கள்
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
 }
 
 // ── REFERENCE TEXT BOX ────────────────────────────────────────────────────────
@@ -417,11 +557,10 @@ function ReferenceBox({
 
 // ── KEYBOARD ROW ──────────────────────────────────────────────────────────────────
 
-// Left panel vowel column background colors (warm palette, table-like)
 const LEFT_COL_BG = [
-  "oklch(0.94 0.09 70)", // col 0 — warm peach
-  "oklch(0.91 0.11 60)", // col 1 — slightly deeper orange
-  "oklch(0.94 0.09 80)", // col 2 — warm yellow
+  "oklch(0.94 0.09 70)",
+  "oklch(0.91 0.11 60)",
+  "oklch(0.94 0.09 80)",
 ];
 const LEFT_COL_BG_ACTIVE = [
   "oklch(0.82 0.18 275)",
@@ -429,7 +568,6 @@ const LEFT_COL_BG_ACTIVE = [
   "oklch(0.82 0.18 275)",
 ];
 
-// Consonant column background colors (teal/mint alternating)
 const CONS_COL_BG = [
   "oklch(0.94 0.08 195)",
   "oklch(0.90 0.10 190)",
@@ -445,8 +583,8 @@ interface KeyRowProps {
   consonants: (string | null)[];
   selectedConsonant: string | null;
   isComboMode: boolean;
-  onLeftKey: (rowIdx: number, colIdx: number) => void;
-  onConsonant: (root: string) => void;
+  onLeftKey: (rowIdx: number, colIdx: number, rect: DOMRect) => void;
+  onConsonant: (root: string, rect: DOMRect) => void;
   onBackspace: () => void;
 }
 
@@ -510,15 +648,18 @@ function KeyRow({
         const isFirst = colIdx === 0;
         const isLastInLeft = colIdx === leftTotal - 1;
         return (
-          <button
+          <motion.button
             key={`left-col-${colIdx}`}
             type="button"
             data-ocid={`keyboard.left_key.${rowIdx * 3 + colIdx + 1}`}
-            onClick={() => onLeftKey(rowIdx, colIdx)}
+            onClick={(e) =>
+              onLeftKey(rowIdx, colIdx, e.currentTarget.getBoundingClientRect())
+            }
             disabled={!cell}
+            whileTap={{ scale: 0.82 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
             className="flex-1 flex items-center justify-center tamil-text
-              active:brightness-90
-              transition-all duration-75 select-none cursor-pointer
+              transition-colors duration-75 select-none cursor-pointer
               disabled:opacity-30 disabled:cursor-default"
             style={{
               background: leftKeyBg(colIdx, isComboMode),
@@ -532,7 +673,7 @@ function KeyRow({
             }}
           >
             {cell ?? ""}
-          </button>
+          </motion.button>
         );
       })}
 
@@ -550,14 +691,15 @@ function KeyRow({
 
         if (isNull) {
           return (
-            <button
+            <motion.button
               key="backspace"
               type="button"
               data-ocid="keyboard.backspace_button"
               onClick={onBackspace}
+              whileTap={{ scale: 0.82 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
               className="flex-1 flex items-center justify-center
-                active:brightness-90
-                transition-all duration-75 select-none cursor-pointer"
+                transition-colors duration-75 select-none cursor-pointer"
               style={{
                 background: "oklch(0.65 0.22 30)",
                 color: "white",
@@ -565,19 +707,23 @@ function KeyRow({
               }}
             >
               <Delete className="w-5 h-5" />
-            </button>
+            </motion.button>
           );
         }
 
         return (
-          <button
+          <motion.button
             key={root}
             type="button"
             data-ocid={`keyboard.consonant_key.${root}`}
-            onClick={() => onConsonant(root)}
+            onClick={(e) =>
+              onConsonant(root, e.currentTarget.getBoundingClientRect())
+            }
+            whileTap={{ scale: 0.82 }}
+            animate={isSelected ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
             className="flex-1 flex items-center justify-center tamil-text
-              active:brightness-90
-              transition-all duration-75 select-none cursor-pointer"
+              transition-colors duration-75 select-none cursor-pointer"
             style={{
               background: consonantBg(colIdx, isSelected, false),
               color: consonantColor(isSelected, false),
@@ -585,12 +731,11 @@ function KeyRow({
               fontSize: "clamp(15px, 2.6vw, 26px)",
               borderLeft:
                 colIdx === 0 ? "none" : "1px solid oklch(0.82 0.08 190 / 0.6)",
-              transform: isSelected ? "scale(0.97)" : undefined,
               ...(isLastInRight ? cornerRadiusRight : {}),
             }}
           >
             {root}
-          </button>
+          </motion.button>
         );
       })}
     </div>
@@ -601,7 +746,7 @@ function KeyRow({
 
 interface EnglishKeyboardProps {
   isShift: boolean;
-  onKey: (char: string) => void;
+  onKey: (char: string, rect: DOMRect) => void;
   onBackspace: () => void;
   onToggleShift: () => void;
 }
@@ -628,13 +773,17 @@ function EnglishKeyboard({
       }}
     >
       {keys.map((k, colIdx) => (
-        <button
+        <motion.button
           key={k}
           type="button"
           data-ocid={`keyboard.en_key.${rowIdx * 10 + colIdx + 1}`}
-          onClick={() => onKey(transform(k))}
+          onClick={(e) =>
+            onKey(transform(k), e.currentTarget.getBoundingClientRect())
+          }
+          whileTap={{ scale: 0.82 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
           className="flex-1 flex items-center justify-center font-bold
-            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+            transition-colors duration-75 select-none cursor-pointer"
           style={{
             background: EN_ROW_COLORS[rowIdx] ?? EN_ROW_COLORS[0],
             color: EN_ROW_TEXT[rowIdx] ?? EN_ROW_TEXT[0],
@@ -644,7 +793,7 @@ function EnglishKeyboard({
           }}
         >
           {transform(k)}
-        </button>
+        </motion.button>
       ))}
       {extraRight}
     </div>
@@ -659,18 +808,18 @@ function EnglishKeyboard({
         overflow: "hidden",
       }}
     >
-      {/* Row 1: Q–P */}
       {renderRow(EN_ROW1, 0)}
-      {/* Row 2: A–L */}
       {renderRow(EN_ROW2, 1)}
       {/* Row 3: Shift + Z–M + Backspace */}
       <div className="flex flex-1">
-        <button
+        <motion.button
           type="button"
           data-ocid="keyboard.en_shift_button"
           onClick={onToggleShift}
+          whileTap={{ scale: 0.82 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
           className="flex items-center justify-center font-bold
-            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+            transition-colors duration-75 select-none cursor-pointer"
           style={{
             background: isShift
               ? "oklch(0.62 0.22 250)"
@@ -683,15 +832,19 @@ function EnglishKeyboard({
           }}
         >
           ⇧
-        </button>
+        </motion.button>
         {EN_ROW3.map((k, colIdx) => (
-          <button
+          <motion.button
             key={k}
             type="button"
             data-ocid={`keyboard.en_key.${20 + colIdx + 1}`}
-            onClick={() => onKey(transform(k))}
+            onClick={(e) =>
+              onKey(transform(k), e.currentTarget.getBoundingClientRect())
+            }
+            whileTap={{ scale: 0.82 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
             className="flex-1 flex items-center justify-center font-bold
-              active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+              transition-colors duration-75 select-none cursor-pointer"
             style={{
               background: EN_ROW_COLORS[2],
               color: EN_ROW_TEXT[2],
@@ -700,14 +853,16 @@ function EnglishKeyboard({
             }}
           >
             {transform(k)}
-          </button>
+          </motion.button>
         ))}
-        <button
+        <motion.button
           type="button"
           data-ocid="keyboard.en_backspace_button"
           onClick={onBackspace}
+          whileTap={{ scale: 0.82 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
           className="flex items-center justify-center
-            active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+            transition-colors duration-75 select-none cursor-pointer"
           style={{
             background: "oklch(0.65 0.22 30)",
             color: "white",
@@ -717,7 +872,7 @@ function EnglishKeyboard({
           }}
         >
           <Delete className="w-5 h-5" />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -726,7 +881,7 @@ function EnglishKeyboard({
 // ── NUMBERS KEYBOARD COMPONENT ────────────────────────────────────────────────
 
 interface NumbersKeyboardProps {
-  onKey: (char: string) => void;
+  onKey: (char: string, rect: DOMRect) => void;
   onBackspace: () => void;
 }
 
@@ -752,13 +907,15 @@ function NumbersKeyboard({ onKey, onBackspace }: NumbersKeyboardProps) {
           }}
         >
           {row.map((k, colIdx) => (
-            <button
+            <motion.button
               key={k}
               type="button"
               data-ocid={`keyboard.num_key.${rowIdx * 10 + colIdx + 1}`}
-              onClick={() => onKey(k)}
+              onClick={(e) => onKey(k, e.currentTarget.getBoundingClientRect())}
+              whileTap={{ scale: 0.82 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
               className="flex-1 flex items-center justify-center font-bold
-                active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+                transition-colors duration-75 select-none cursor-pointer"
               style={{
                 background: NUM_ROW_COLORS[rowIdx] ?? NUM_ROW_COLORS[0],
                 color: NUM_ROW_TEXT[rowIdx] ?? NUM_ROW_TEXT[0],
@@ -776,15 +933,17 @@ function NumbersKeyboard({ onKey, onBackspace }: NumbersKeyboardProps) {
               }}
             >
               {k}
-            </button>
+            </motion.button>
           ))}
           {rowIdx === 2 && (
-            <button
+            <motion.button
               type="button"
               data-ocid="keyboard.num_backspace_button"
               onClick={onBackspace}
+              whileTap={{ scale: 0.82 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
               className="flex items-center justify-center
-                active:brightness-90 transition-all duration-75 select-none cursor-pointer"
+                transition-colors duration-75 select-none cursor-pointer"
               style={{
                 background: "oklch(0.65 0.22 30)",
                 color: "white",
@@ -794,7 +953,7 @@ function NumbersKeyboard({ onKey, onBackspace }: NumbersKeyboardProps) {
               }}
             >
               <Delete className="w-5 h-5" />
-            </button>
+            </motion.button>
           )}
         </div>
       ))}
@@ -808,8 +967,6 @@ export default function App() {
   const [text, setText] = useState("");
   const [soundOn, setSoundOn] = useState(true);
   const [isListening, setIsListening] = useState(false);
-  const [flashChar, setFlashChar] = useState("");
-  const [flashKey, setFlashKey] = useState(0);
   const [selectedConsonant, setSelectedConsonant] = useState<string | null>(
     null,
   );
@@ -817,10 +974,61 @@ export default function App() {
   const [isEditingReference, setIsEditingReference] = useState(false);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>("tamil");
   const [isShift, setIsShift] = useState(true);
+
+  // Animation state
+  const [bursts, setBursts] = useState<BurstItem[]>([]);
+  const [flyingLetters, setFlyingLetters] = useState<FlyingItem[]>([]);
+  const [monkeyJumping, setMonkeyJumping] = useState(false);
+
   const pendingRootRef = useRef<string | null>(null);
-  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textScrollRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLDivElement>(null);
+  const idCounterRef = useRef(0);
   const { speak } = useSpeech();
+
+  const nextId = useCallback(() => {
+    idCounterRef.current += 1;
+    return idCounterRef.current;
+  }, []);
+
+  const removeBurst = useCallback((id: number) => {
+    setBursts((prev) => prev.filter((b) => b.id !== id));
+  }, []);
+
+  const removeFlyingLetter = useCallback((id: number) => {
+    setFlyingLetters((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const triggerAnimations = useCallback(
+    (char: string, rect: DOMRect) => {
+      const id = nextId();
+      const bx = rect.left + rect.width / 2;
+      const by = rect.top + rect.height / 2;
+
+      setBursts((prev) => [...prev, { id, x: bx, y: by }]);
+      setMonkeyJumping(true);
+      setTimeout(() => setMonkeyJumping(false), 500);
+
+      if (textAreaRef.current) {
+        const taRect = textAreaRef.current.getBoundingClientRect();
+        const endX = taRect.right - taRect.width * 0.12;
+        const endY = taRect.top + taRect.height / 2;
+        const flyId = nextId();
+        setFlyingLetters((prev) => [
+          ...prev,
+          {
+            id: flyId,
+            char,
+            startX: bx,
+            startY: by,
+            endX,
+            endY,
+          },
+        ]);
+      }
+    },
+    [nextId],
+  );
 
   useEffect(() => {
     const orientationAny = screen.orientation as any;
@@ -844,12 +1052,7 @@ export default function App() {
     }
   }, [text]);
 
-  const showFlash = useCallback((char: string) => {
-    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
-    setFlashChar(char);
-    setFlashKey((k) => k + 1);
-    flashTimeoutRef.current = setTimeout(() => setFlashChar(""), 1500);
-  }, []);
+  const showFlash = useCallback((_char: string) => {}, []);
 
   const fireChar = useCallback(
     (char: string, lang?: string) => {
@@ -861,7 +1064,7 @@ export default function App() {
   );
 
   const handleLeftKey = useCallback(
-    (rowIdx: number, colIdx: number) => {
+    (rowIdx: number, colIdx: number, rect: DOMRect) => {
       const idx = rowIdx * 3 + colIdx;
       if (selectedConsonant) {
         const combos = getComboCells(selectedConsonant);
@@ -880,24 +1083,29 @@ export default function App() {
           }
           if (soundOn) speak(combo);
           showFlash(combo);
+          triggerAnimations(combo, rect);
           setSelectedConsonant(null);
           pendingRootRef.current = null;
         }
       } else {
         const vowel = VOWEL_GRID[rowIdx]?.[colIdx];
-        if (vowel) fireChar(vowel);
+        if (vowel) {
+          fireChar(vowel);
+          triggerAnimations(vowel, rect);
+        }
       }
     },
-    [selectedConsonant, fireChar, soundOn, speak, showFlash],
+    [selectedConsonant, fireChar, soundOn, speak, showFlash, triggerAnimations],
   );
 
   const handleConsonant = useCallback(
-    (root: string) => {
+    (root: string, rect: DOMRect) => {
       fireChar(root);
+      triggerAnimations(root, rect);
       setSelectedConsonant(root);
       pendingRootRef.current = root;
     },
-    [fireChar],
+    [fireChar, triggerAnimations],
   );
 
   const backspace = useCallback(() => {
@@ -912,7 +1120,6 @@ export default function App() {
 
   const clearAll = useCallback(() => {
     setText("");
-    setFlashChar("");
     setSelectedConsonant(null);
     pendingRootRef.current = null;
   }, []);
@@ -961,7 +1168,6 @@ export default function App() {
   const switchMode = useCallback(() => {
     setKeyboardMode((prev) => {
       const next = nextMode(prev);
-      // reset consonant state when leaving Tamil mode
       setSelectedConsonant(null);
       pendingRootRef.current = null;
       return next;
@@ -969,19 +1175,20 @@ export default function App() {
   }, []);
 
   const handleEnglishKey = useCallback(
-    (char: string) => {
+    (char: string, rect: DOMRect) => {
       fireChar(char, "en-US");
-      // auto-lower after typing in uppercase
+      triggerAnimations(char, rect);
       if (isShift) setIsShift(false);
     },
-    [fireChar, isShift],
+    [fireChar, isShift, triggerAnimations],
   );
 
   const handleNumberKey = useCallback(
-    (char: string) => {
+    (char: string, rect: DOMRect) => {
       fireChar(char, "en-US");
+      triggerAnimations(char, rect);
     },
-    [fireChar],
+    [fireChar, triggerAnimations],
   );
 
   const year = new Date().getFullYear();
@@ -997,14 +1204,15 @@ export default function App() {
 
   // Bottom action row shared buttons
   const langToggleButton = (
-    <button
+    <motion.button
       key="lang-toggle"
       type="button"
       data-ocid="keyboard.lang_toggle"
       onClick={switchMode}
+      whileTap={{ scale: 0.82 }}
+      transition={{ type: "spring", stiffness: 500, damping: 20 }}
       className="flex items-center justify-center font-bold
-        active:brightness-90
-        transition-all duration-75 select-none cursor-pointer"
+        transition-colors duration-75 select-none cursor-pointer"
       style={{
         background: "oklch(0.75 0.18 50)",
         color: "white",
@@ -1014,8 +1222,8 @@ export default function App() {
         borderBottomLeftRadius: "8px",
       }}
     >
-      {modeLabel(keyboardMode)}
-    </button>
+      🌐 {modeLabel(keyboardMode)}
+    </motion.button>
   );
 
   return (
@@ -1025,21 +1233,72 @@ export default function App() {
     >
       <Toaster position="top-center" />
 
-      {/* ── TOP BAR ── */}
-      <header
-        className="flex-none flex items-center gap-2 px-3"
+      {/* ── ANIMATIONS OVERLAY ── */}
+      <div
         style={{
-          height: "44px",
-          background: "oklch(0.62 0.22 25)",
-          boxShadow: "0 2px 8px oklch(0.5 0.2 25 / 0.4)",
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          pointerEvents: "none",
+          overflow: "hidden",
         }}
       >
-        <span
+        <AnimatePresence>
+          {bursts.map((burst) => (
+            <FireworkBurst
+              key={burst.id}
+              burst={burst}
+              onComplete={removeBurst}
+            />
+          ))}
+        </AnimatePresence>
+        <AnimatePresence>
+          {flyingLetters.map((item) => (
+            <FlyingLetter
+              key={item.id}
+              item={item}
+              onComplete={removeFlyingLetter}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* ── TOP BAR ── */}
+      <motion.header
+        className="flex-none flex items-center gap-2 px-3"
+        animate={{
+          background: [
+            "oklch(0.62 0.22 25)",
+            "oklch(0.60 0.22 60)",
+            "oklch(0.58 0.22 140)",
+            "oklch(0.58 0.22 230)",
+            "oklch(0.60 0.22 290)",
+            "oklch(0.62 0.22 330)",
+            "oklch(0.62 0.22 25)",
+          ],
+        }}
+        transition={{
+          duration: 9,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "linear",
+        }}
+        style={{
+          height: "44px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+        }}
+      >
+        <motion.span
           className="font-display text-white select-none flex-none"
-          style={{ fontSize: "16px" }}
+          animate={{ rotate: [0, 15, -15, 10, -5, 0] }}
+          transition={{
+            duration: 2.5,
+            repeat: Number.POSITIVE_INFINITY,
+            repeatDelay: 4,
+          }}
+          style={{ fontSize: "18px" }}
         >
           🎵
-        </span>
+        </motion.span>
         <h1
           className="tamil-text font-bold text-white flex-none"
           style={{ fontSize: "clamp(12px, 1.8vw, 17px)" }}
@@ -1148,7 +1407,7 @@ export default function App() {
             )}
           </AnimatePresence>
         </motion.button>
-      </header>
+      </motion.header>
 
       {/* ── REFERENCE TEXT BOX ── */}
       <ReferenceBox
@@ -1167,17 +1426,12 @@ export default function App() {
         {/* Text display */}
         <div
           className="flex-none flex gap-2 px-2 pt-1 pb-1"
-          style={{ height: "22%" }}
+          style={{ height: "28%" }}
         >
-          <div
-            className="flex-none"
-            style={{ width: "clamp(60px, 18%, 130px)" }}
-          >
-            <FlashCard char={flashChar} flashKey={flashKey} />
-          </div>
           <div
             className="flex-1 flex flex-col rounded-2xl overflow-hidden"
             style={{
+              position: "relative",
               border: "2px solid oklch(0.82 0.1 250)",
               background: "oklch(1 0 0)",
               boxShadow: "inset 0 2px 6px oklch(0.7 0.06 250 / 0.15)",
@@ -1202,7 +1456,10 @@ export default function App() {
             </div>
             <div
               data-ocid="keyboard.textarea"
-              ref={textScrollRef}
+              ref={(el) => {
+                (textScrollRef as any).current = el;
+                (textAreaRef as any).current = el;
+              }}
               className="flex-1 overflow-y-auto overflow-x-hidden p-2 keyboard-scroll"
               style={{ wordBreak: "break-all" }}
             >
@@ -1218,10 +1475,23 @@ export default function App() {
                     }}
                   >
                     {text}
-                    <span
-                      className="inline-block w-0.5 h-5 ml-0.5 animate-pulse align-middle"
-                      style={{ background: "oklch(0.62 0.22 25)" }}
-                    />
+                    {/* Sparkle cursor */}
+                    <motion.span
+                      animate={{
+                        scale: [1, 1.35, 0.9, 1.2, 1],
+                        rotate: [0, 20, -15, 10, 0],
+                        opacity: [1, 0.8, 1, 0.9, 1],
+                      }}
+                      transition={{
+                        duration: 1.2,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                      className="inline-block ml-0.5 align-middle"
+                      style={{ fontSize: "0.75em" }}
+                    >
+                      ✨
+                    </motion.span>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -1243,6 +1513,7 @@ export default function App() {
                 )}
               </AnimatePresence>
             </div>
+            <WanderingMonkey isJumping={monkeyJumping} />
           </div>
         </div>
 
@@ -1301,41 +1572,55 @@ export default function App() {
                 }}
               >
                 {langToggleButton}
-                <button
+                <motion.button
                   type="button"
                   data-ocid="keyboard.period_button"
-                  onClick={() => fireChar(".")}
+                  onClick={(e) => {
+                    fireChar(".");
+                    triggerAnimations(
+                      ".",
+                      e.currentTarget.getBoundingClientRect(),
+                    );
+                  }}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
-                    background: "oklch(0.75 0.14 250)",
+                    background: "oklch(0.65 0.22 220)",
                     color: "white",
                     fontSize: "clamp(16px, 2.4vw, 24px)",
                     minWidth: "clamp(40px, 7%, 64px)",
-                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                    borderRight: "1px solid oklch(0.55 0.22 220 / 0.6)",
                   }}
                 >
-                  .
-                </button>
-                <button
+                  🔵.
+                </motion.button>
+                <motion.button
                   type="button"
                   data-ocid="keyboard.comma_button"
-                  onClick={() => fireChar(",")}
+                  onClick={(e) => {
+                    fireChar(",");
+                    triggerAnimations(
+                      ",",
+                      e.currentTarget.getBoundingClientRect(),
+                    );
+                  }}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
-                    background: "oklch(0.75 0.14 250)",
+                    background: "oklch(0.65 0.22 145)",
                     color: "white",
                     fontSize: "clamp(16px, 2.4vw, 24px)",
                     minWidth: "clamp(40px, 7%, 64px)",
-                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                    borderRight: "1px solid oklch(0.55 0.22 145 / 0.6)",
                   }}
                 >
-                  ,
-                </button>
-                <button
+                  🟢,
+                </motion.button>
+                <motion.button
                   type="button"
                   data-ocid="keyboard.space_button"
                   onClick={() => {
@@ -1343,9 +1628,10 @@ export default function App() {
                     pendingRootRef.current = null;
                     setText((prev) => `${prev} `);
                   }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="flex-1 flex items-center justify-center gap-1.5
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold tamil-text"
+                    transition-colors duration-75 select-none cursor-pointer font-bold tamil-text"
                   style={{
                     background: "oklch(0.78 0.16 265)",
                     color: "white",
@@ -1353,50 +1639,56 @@ export default function App() {
                     borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
                   }}
                 >
-                  <span style={{ fontSize: "1.2em" }}>␣</span> சரவணன் பர்வித்
+                  🌟 <span style={{ fontSize: "1.2em" }}>␣</span> சரவணன் பர்வித்
                   அதிதீரன்
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   data-ocid="keyboard.aytham_button"
-                  onClick={() => {
+                  onClick={(e) => {
                     setSelectedConsonant(null);
                     pendingRootRef.current = null;
                     fireChar("ஃ");
+                    triggerAnimations(
+                      "ஃ",
+                      e.currentTarget.getBoundingClientRect(),
+                    );
                   }}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center tamil-text
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
-                    background: "oklch(0.78 0.18 265)",
+                    background: "oklch(0.72 0.20 30)",
                     color: "white",
                     fontSize: "clamp(15px, 2.4vw, 24px)",
                     minWidth: "clamp(40px, 8%, 64px)",
-                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
+                    borderRight: "1px solid oklch(0.60 0.20 30 / 0.6)",
                   }}
                 >
                   ஃ
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   onClick={() => {
                     setSelectedConsonant(null);
                     pendingRootRef.current = null;
                     setText((prev) => `${prev}\n`);
                   }}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
-                    background: "oklch(0.6 0.18 160)",
+                    background: "oklch(0.55 0.20 145)",
                     color: "white",
                     fontSize: "clamp(14px, 2.2vw, 20px)",
                     minWidth: "clamp(48px, 10%, 80px)",
                     borderBottomRightRadius: "8px",
                   }}
                 >
-                  ↵
-                </button>
+                  ✅
+                </motion.button>
               </div>
             </div>
           )}
@@ -1426,13 +1718,14 @@ export default function App() {
                 }}
               >
                 {langToggleButton}
-                <button
+                <motion.button
                   type="button"
                   data-ocid="keyboard.en_space_button"
                   onClick={() => setText((prev) => `${prev} `)}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="flex-1 flex items-center justify-center gap-1.5
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
                     background: "oklch(0.78 0.10 220)",
                     color: "white",
@@ -1441,14 +1734,15 @@ export default function App() {
                   }}
                 >
                   <span style={{ fontSize: "1.2em" }}>␣</span> Space
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   data-ocid="keyboard.en_enter_button"
                   onClick={() => setText((prev) => `${prev}\n`)}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
                     background: "oklch(0.6 0.18 160)",
                     color: "white",
@@ -1457,7 +1751,7 @@ export default function App() {
                   }}
                 >
                   ↵
-                </button>
+                </motion.button>
               </div>
             </div>
           )}
@@ -1485,13 +1779,14 @@ export default function App() {
                 }}
               >
                 {langToggleButton}
-                <button
+                <motion.button
                   type="button"
                   data-ocid="keyboard.num_space_button"
                   onClick={() => setText((prev) => `${prev} `)}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="flex-1 flex items-center justify-center gap-1.5
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
                     background: "oklch(0.78 0.10 300)",
                     color: "white",
@@ -1500,14 +1795,15 @@ export default function App() {
                   }}
                 >
                   <span style={{ fontSize: "1.2em" }}>␣</span> Space
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
                   data-ocid="keyboard.num_enter_button"
                   onClick={() => setText((prev) => `${prev}\n`)}
+                  whileTap={{ scale: 0.82 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
                   className="flex items-center justify-center
-                    active:brightness-90
-                    transition-all duration-75 select-none cursor-pointer font-bold"
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                   style={{
                     background: "oklch(0.6 0.18 160)",
                     color: "white",
@@ -1516,27 +1812,30 @@ export default function App() {
                   }}
                 >
                   ↵
-                </button>
+                </motion.button>
               </div>
             </div>
           )}
         </div>
-
-        <div
-          className="flex-none text-center py-0.5"
-          style={{ fontSize: "9px", color: "oklch(0.6 0.06 250)" }}
-        >
-          © {year}{" "}
-          <a
-            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
-            Built with ❤️ using caffeine.ai
-          </a>
-        </div>
       </div>
+      <footer
+        className="flex-none text-center py-0.5"
+        style={{
+          fontSize: "clamp(7px, 1vw, 10px)",
+          color: "oklch(0.6 0.06 50)",
+          background: "oklch(0.94 0.03 80)",
+        }}
+      >
+        © {year}.{" "}
+        <a
+          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: "oklch(0.55 0.12 250)" }}
+        >
+          Built with ❤️ using caffeine.ai
+        </a>
+      </footer>
     </div>
   );
 }
