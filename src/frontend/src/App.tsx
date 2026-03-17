@@ -538,6 +538,15 @@ function useSpeech() {
 
 // ── REFERENCE TEXT BOX ────────────────────────────────────────────────────────
 
+const PRESET_SENTENCES = [
+  "தமிழ் கற்றுக்கொள்ள இதை தட்டச்சு செய்யுங்கள். உங்களுக்கு பிடித்த வாக்கியத்தை நகலெடுத்து இதில் ஒட்டி பயன்படுத்துங்கள். நாங்கள் சேமித்து வைத்துள்ள பல வாக்கியங்களை அடுத்தடுத்து மாற்றிக் கொள்ளுங்கள்.",
+  "அம்மா அப்பா அண்ணன் தம்பி அக்கா தங்கை தாத்தா பாட்டி மகன் மகள்",
+  "தாகத்தில் காகம் பானையை பார்த்தது. தண்ணீர் அடியில் இருந்தது கல்லை உள்ளே போட்டு, தண்ணி மேலே வந்தது. தண்ணீர் குடித்து பறந்து சென்றது.",
+  "பாட்டி சுட்ட வடையை காகம் திருடியது. காகம் வாயில் வடையை பார்த்த நரி, காகத்தை பாட சொன்னது. காகம் பாடியதும், வடை கீழே விழுந்தது. நரி அதை வாயில் கவ்வி பிடித்து ஓடியது.",
+  "தமிழன் என்று சொல்லடா தலை நிமிர்ந்து நில்லடா",
+  "இந்தத் தமிழ் விசைப்பலகை பயன்படுத்தி தமிழ் கற்றுக் கொண்டிருப்பீர்கள் என்று நம்புகிறேன்.",
+];
+
 interface ReferenceBoxProps {
   referenceText: string;
   typedText: string;
@@ -545,6 +554,8 @@ interface ReferenceBoxProps {
   onEdit: () => void;
   onSave: (text: string) => void;
   onClear: () => void;
+  onNextPreset: () => void;
+  presetIndex: number;
 }
 
 function splitChars(str: string): string[] {
@@ -563,6 +574,8 @@ function ReferenceBox({
   onEdit,
   onSave,
   onClear,
+  onNextPreset,
+  presetIndex,
 }: ReferenceBoxProps) {
   const [draft, setDraft] = useState(referenceText);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -603,16 +616,33 @@ function ReferenceBox({
           📖 பார்க்க வேண்டிய வாக்கியம்
         </span>
         {!isEditing && (
-          <button
-            type="button"
-            data-ocid="reference.edit_button"
-            onClick={onEdit}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
-            style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
-          >
-            <Edit3 className="w-3 h-3" />
-            <span>தட்டு / Paste</span>
-          </button>
+          <>
+            <button
+              type="button"
+              data-ocid="reference.next_preset_button"
+              onClick={onNextPreset}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
+              style={{
+                fontSize: "clamp(8px, 1.1vw, 10px)",
+                background: "oklch(0.55 0.18 140 / 0.5)",
+              }}
+              title="அடுத்த வாக்கியம்"
+            >
+              <span>
+                📚 {presetIndex + 1}/{PRESET_SENTENCES.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="reference.edit_button"
+              onClick={onEdit}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-white hover:bg-white/20 transition-all"
+              style={{ fontSize: "clamp(8px, 1.1vw, 10px)" }}
+            >
+              <Edit3 className="w-3 h-3" />
+              <span>தட்டு / Paste</span>
+            </button>
+          </>
         )}
         {referenceText && !isEditing && (
           <button
@@ -1149,7 +1179,8 @@ export default function App() {
   const [selectedConsonant, setSelectedConsonant] = useState<string | null>(
     null,
   );
-  const [referenceText, setReferenceText] = useState("");
+  const [referenceText, setReferenceText] = useState(PRESET_SENTENCES[0]);
+  const [presetIndex, setPresetIndex] = useState(0);
   const [isEditingReference, setIsEditingReference] = useState(false);
   const [keyboardMode, setKeyboardMode] = useState<KeyboardMode>("tamil");
   const [isShift, setIsShift] = useState(true);
@@ -1479,6 +1510,15 @@ export default function App() {
     setIsEditingReference(false);
   }, []);
 
+  const handleNextPreset = useCallback(() => {
+    setPresetIndex((prev) => {
+      const next = (prev + 1) % PRESET_SENTENCES.length;
+      setReferenceText(PRESET_SENTENCES[next]);
+      return next;
+    });
+    setIsEditingReference(false);
+  }, []);
+
   const switchMode = useCallback(() => {
     setKeyboardMode((prev) => {
       const next = nextMode(prev);
@@ -1759,6 +1799,8 @@ export default function App() {
         onEdit={() => setIsEditingReference(true)}
         onSave={handleReferenceSave}
         onClear={handleReferenceClear}
+        onNextPreset={handleNextPreset}
+        presetIndex={presetIndex}
       />
 
       {/* ── MAIN CONTENT ── */}
