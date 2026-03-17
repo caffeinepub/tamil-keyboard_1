@@ -314,9 +314,9 @@ function WanderingMonkey({
 
   const burntAnim = { y: 8, rotate: 90, scale: 1.1 };
   const jumpAnim = {
-    y: [-100, -15, 0],
+    y: [-70, -10, 0],
     rotate: [0, -20, 20, 0],
-    scale: [2.2, 1.4, 1],
+    scale: [1.8, 1.2, 1],
   };
   const idleAnim = { y: [0, -6, 0] };
 
@@ -326,7 +326,7 @@ function WanderingMonkey({
         position: "absolute",
         bottom: 2,
         left: `${posX}%`,
-        fontSize: "clamp(48px, 7vw, 72px)",
+        fontSize: "clamp(36px, 5vw, 54px)",
         pointerEvents: "none",
         zIndex: 10,
         userSelect: "none",
@@ -544,7 +544,7 @@ const PRESET_SENTENCES = [
   "தாகத்தில் காகம் பானையை பார்த்தது. தண்ணீர் அடியில் இருந்தது கல்லை உள்ளே போட்டு, தண்ணி மேலே வந்தது. தண்ணீர் குடித்து பறந்து சென்றது.",
   "பாட்டி சுட்ட வடையை காகம் திருடியது. காகம் வாயில் வடையை பார்த்த நரி, காகத்தை பாட சொன்னது. காகம் பாடியதும், வடை கீழே விழுந்தது. நரி அதை வாயில் கவ்வி பிடித்து ஓடியது.",
   "தமிழன் என்று சொல்லடா தலை நிமிர்ந்து நில்லடா",
-  "இந்தத் தமிழ் விசைப்பலகை பயன்படுத்தி தமிழ் கற்றுக் கொண்டிருப்பீர்கள் என்று நம்புகிறேன்.",
+  "இந்தத் தமிழ் தட்டச்சு பயன்படுத்தி தமிழ் கற்றுக் கொண்டிருப்பீர்கள் என்று நம்புகிறேன்.",
 ];
 
 interface ReferenceBoxProps {
@@ -595,7 +595,7 @@ function ReferenceBox({
         background: "oklch(0.98 0.06 280)",
         border: "2px solid oklch(0.80 0.14 280)",
         borderRadius: "12px",
-        margin: "4px 8px 2px",
+        margin: "2px 4px 2px",
         overflow: "hidden",
         height: "22%",
         flex: "none",
@@ -1647,7 +1647,7 @@ export default function App() {
 
       {/* ── TOP BAR ── */}
       <motion.header
-        className="flex-none flex items-center gap-2 px-3"
+        className="flex-none flex items-center justify-center gap-2 px-3"
         animate={{
           background: [
             "oklch(0.62 0.22 25)",
@@ -1685,9 +1685,8 @@ export default function App() {
           className="tamil-text font-bold text-white flex-none"
           style={{ fontSize: "clamp(12px, 1.8vw, 17px)" }}
         >
-          தமிழ் விசைப்பலகை
+          தமிழ் தட்டச்சு
         </h1>
-        <div className="flex-1" />
 
         <button
           type="button"
@@ -1810,7 +1809,7 @@ export default function App() {
       >
         {/* Text display */}
         <div
-          className="flex-none flex gap-2 px-2 pt-1 pb-1"
+          className="flex-none flex gap-2 px-1 pt-2 pb-1"
           style={{ height: "28%" }}
         >
           <div
@@ -1891,7 +1890,7 @@ export default function App() {
                     <p
                       className="tamil-text text-center"
                       style={{
-                        fontSize: "clamp(11px, 1.6vw, 16px)",
+                        fontSize: "clamp(9px, 1.2vw, 13px)",
                         color: "oklch(0.7 0.06 250)",
                       }}
                     >
