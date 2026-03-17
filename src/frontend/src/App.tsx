@@ -167,6 +167,55 @@ interface FlyingItem {
   endY: number;
 }
 
+interface FallingApple {
+  id: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
+function FallingApple({
+  item,
+  onComplete,
+}: {
+  item: FallingApple;
+  onComplete: (id: number) => void;
+}) {
+  return (
+    <motion.div
+      initial={{
+        x: item.startX,
+        y: item.startY,
+        scale: 1.5,
+        opacity: 1,
+        rotate: 0,
+      }}
+      animate={{
+        x: item.endX,
+        y: item.endY,
+        scale: [1.5, 1.2, 0],
+        opacity: [1, 1, 0],
+        rotate: [0, 15, -10, 0],
+      }}
+      transition={{ duration: 0.7, ease: [0.25, 0.1, 0.4, 1] }}
+      onAnimationComplete={() => onComplete(item.id)}
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        fontSize: "clamp(24px, 3.5vw, 40px)",
+        pointerEvents: "none",
+        zIndex: 9999,
+        transformOrigin: "center",
+        lineHeight: 1,
+      }}
+    >
+      🍇
+    </motion.div>
+  );
+}
+
 function FireworkBurst({
   burst,
   onComplete,
@@ -245,25 +294,31 @@ function FireworkBurst({
   );
 }
 
-function WanderingMonkey({ isJumping }: { isJumping: boolean }) {
-  const [posX, setPosX] = useState(20);
-  const directionRef = useRef(1);
+function WanderingMonkey({
+  isJumping,
+  targetX,
+  isBurnt,
+}: { isJumping: boolean; targetX: number; isBurnt: boolean }) {
+  const [posX, setPosX] = useState(targetX);
 
   useEffect(() => {
-    const tick = () => {
-      const d = directionRef.current;
-      setPosX((prev) => {
-        const next = prev + d * (3 + Math.random() * 4);
-        if (next > 85 || next < 5) {
-          directionRef.current = -d;
-          return Math.max(5, Math.min(85, prev));
-        }
-        return next;
+    const interval = setInterval(() => {
+      setPosX(() => {
+        const wander = (Math.random() - 0.5) * 8; // ±4%
+        const next = targetX + wander;
+        return Math.max(5, Math.min(92, next));
       });
-    };
-    const interval = setInterval(tick, 600 + Math.random() * 400);
+    }, 600);
     return () => clearInterval(interval);
-  }, []);
+  }, [targetX]);
+
+  const burntAnim = { y: 8, rotate: 90, scale: 1.1 };
+  const jumpAnim = {
+    y: [-100, -15, 0],
+    rotate: [0, -20, 20, 0],
+    scale: [2.2, 1.4, 1],
+  };
+  const idleAnim = { y: [0, -6, 0] };
 
   return (
     <motion.div
@@ -271,29 +326,114 @@ function WanderingMonkey({ isJumping }: { isJumping: boolean }) {
         position: "absolute",
         bottom: 2,
         left: `${posX}%`,
-        fontSize: "clamp(14px, 2vw, 20px)",
+        fontSize: "clamp(48px, 7vw, 72px)",
         pointerEvents: "none",
         zIndex: 10,
         userSelect: "none",
         lineHeight: 1,
       }}
-      animate={
-        isJumping
-          ? { y: [-20, 0], rotate: [0, -15, 15, 0], scale: [1.4, 1] }
-          : { y: [0, -3, 0] }
-      }
+      animate={isBurnt ? burntAnim : isJumping ? jumpAnim : idleAnim}
       transition={
-        isJumping
+        isBurnt
           ? { duration: 0.4, ease: "easeOut" }
-          : {
-              duration: 0.8,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }
+          : isJumping
+            ? { duration: 0.55, ease: "easeOut" }
+            : {
+                duration: 1.0,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }
       }
     >
-      🐒
+      {isBurnt ? "🔥🐒" : "🐒"}
     </motion.div>
+  );
+}
+
+function FallingFire({
+  item,
+  onComplete,
+}: {
+  item: FallingApple;
+  onComplete: (id: number) => void;
+}) {
+  return (
+    <motion.div
+      initial={{
+        x: item.startX,
+        y: item.startY,
+        scale: 2,
+        opacity: 1,
+        rotate: 0,
+      }}
+      animate={{
+        x: item.endX,
+        y: item.endY,
+        scale: [2, 2.5, 0],
+        opacity: [1, 1, 0],
+        rotate: [0, 20, -20, 10, 0],
+      }}
+      transition={{ duration: 0.45, ease: [0.2, 0.8, 0.4, 1] }}
+      onAnimationComplete={() => onComplete(item.id)}
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        fontSize: "clamp(28px, 4vw, 48px)",
+        pointerEvents: "none",
+        zIndex: 9999,
+        transformOrigin: "center",
+        lineHeight: 1,
+        filter: "drop-shadow(0 0 8px rgba(255,80,0,0.9))",
+      }}
+    >
+      🔥
+    </motion.div>
+  );
+}
+function GrapeBunch({ count }: { count: number }) {
+  const ALL_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const visible = ALL_IDS.slice(0, count);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        right: 8,
+        zIndex: 5,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        style={{ width: 2, height: 10, background: "#2d7a2d", borderRadius: 1 }}
+      />
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          width: "clamp(36px, 4.5vw, 54px)",
+          justifyContent: "center",
+        }}
+      >
+        <AnimatePresence>
+          {visible.map((id) => (
+            <motion.span
+              key={id}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ fontSize: "clamp(10px, 1.4vw, 16px)", lineHeight: 1 }}
+            >
+              🍇
+            </motion.span>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
 
@@ -309,20 +449,20 @@ function FlyingLetter({
       initial={{
         x: item.startX,
         y: item.startY,
-        scale: 4.5,
+        scale: 7,
         opacity: 1,
         rotate: 0,
       }}
       animate={{
         x: item.endX,
         y: item.endY,
-        scale: 0.4,
-        opacity: [1, 1, 0],
-        rotate: [0, -10, 10, 0],
+        scale: [7, 8, 0.3],
+        opacity: [1, 1, 1, 0],
+        rotate: [0, -8, 8, 0],
       }}
       transition={{
-        duration: 0.42,
-        ease: [0.2, 0.8, 0.6, 1],
+        duration: 0.75,
+        ease: [0.15, 0.85, 0.5, 1],
       }}
       onAnimationComplete={() => onComplete(item.id)}
       style={{
@@ -400,14 +540,25 @@ function useSpeech() {
 
 interface ReferenceBoxProps {
   referenceText: string;
+  typedText: string;
   isEditing: boolean;
   onEdit: () => void;
   onSave: (text: string) => void;
   onClear: () => void;
 }
 
+function splitChars(str: string): string[] {
+  const normalized = str.normalize("NFC");
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const seg = new Intl.Segmenter();
+    return [...seg.segment(normalized)].map((s) => s.segment);
+  }
+  return [...normalized];
+}
+
 function ReferenceBox({
   referenceText,
+  typedText,
   isEditing,
   onEdit,
   onSave,
@@ -506,6 +657,7 @@ function ReferenceBox({
             data-ocid="reference.textarea"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            maxLength={500}
             placeholder="இங்கே வாக்கியங்களை paste செய்யுங்கள்..."
             className="w-full h-full resize-none tamil-text outline-none px-2 py-1"
             style={{
@@ -529,11 +681,38 @@ function ReferenceBox({
                 style={{
                   fontSize: "clamp(15px, 2.5vw, 26px)",
                   lineHeight: 1.4,
-                  color: "oklch(0.2 0.08 280)",
                   fontWeight: 700,
+                  letterSpacing: "0.02em",
                 }}
               >
-                {referenceText}
+                {(() => {
+                  const refChars = splitChars(referenceText);
+                  const typedChars = splitChars(typedText);
+                  return refChars.map((ch, i) => {
+                    let color = "#374151";
+                    let bg = "transparent";
+                    if (i < typedChars.length) {
+                      const match =
+                        typedChars[i].normalize("NFC") === ch.normalize("NFC");
+                      color = match ? "#15803d" : "#dc2626";
+                      bg = match ? "#bbf7d0" : "#fecaca";
+                    }
+                    const key = `c${i}`;
+                    return (
+                      <span
+                        key={key}
+                        style={{
+                          color,
+                          background: bg,
+                          borderRadius: "3px",
+                          padding: "0 1px",
+                        }}
+                      >
+                        {ch}
+                      </span>
+                    );
+                  });
+                })()}
               </p>
             ) : (
               <p
@@ -979,10 +1158,17 @@ export default function App() {
   const [bursts, setBursts] = useState<BurstItem[]>([]);
   const [flyingLetters, setFlyingLetters] = useState<FlyingItem[]>([]);
   const [monkeyJumping, setMonkeyJumping] = useState(false);
+  const [fallingApples, setFallingApples] = useState<FallingApple[]>([]);
+  const [fallingFires, setFallingFires] = useState<FallingApple[]>([]);
+  const [monkeyBurnt, setMonkeyBurnt] = useState(false);
+  const [grapeCount, setGrapeCount] = useState(10);
+  const [monkeyTargetX, setMonkeyTargetX] = useState(50);
 
   const pendingRootRef = useRef<string | null>(null);
   const textScrollRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLSpanElement>(null);
+  const monkeyContainerRef = useRef<HTMLDivElement>(null);
   const idCounterRef = useRef(0);
   const { speak } = useSpeech();
 
@@ -999,20 +1185,100 @@ export default function App() {
     setFlyingLetters((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
+  const removeFallingApple = useCallback((id: number) => {
+    setFallingApples((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const removeFallingFire = useCallback((id: number) => {
+    setFallingFires((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const triggerFallingApple = useCallback(() => {
+    if (!cursorRef.current || !monkeyContainerRef.current) return;
+    setGrapeCount((prev) => {
+      const next = prev - 1;
+      return next <= 0 ? 10 : next;
+    });
+    const cRect = cursorRef.current.getBoundingClientRect();
+    const containerRect = monkeyContainerRef.current.getBoundingClientRect();
+    const startX = cRect.left + cRect.width / 2;
+    const startY = cRect.top + cRect.height / 2;
+    const relX = ((startX - containerRect.left) / containerRect.width) * 100;
+    const endXPct = Math.max(5, Math.min(92, relX));
+    const endX = containerRect.left + (endXPct / 100) * containerRect.width;
+    const endY = containerRect.bottom - 20;
+    const appleId = nextId();
+    setFallingApples((prev) => [
+      ...prev,
+      { id: appleId, startX, startY, endX, endY },
+    ]);
+    // Monkey jumps to catch after apple lands
+    setTimeout(() => {
+      setMonkeyJumping(true);
+      setTimeout(() => setMonkeyJumping(false), 600);
+    }, 550);
+  }, [nextId]);
+
+  const triggerFallingFire = useCallback(() => {
+    if (!cursorRef.current || !monkeyContainerRef.current) return;
+    const cRect = cursorRef.current.getBoundingClientRect();
+    const containerRect = monkeyContainerRef.current.getBoundingClientRect();
+    const startX = cRect.left + cRect.width / 2;
+    const startY = cRect.top + cRect.height / 2;
+    const relX = ((startX - containerRect.left) / containerRect.width) * 100;
+    const endXPct = Math.max(5, Math.min(92, relX));
+    const endX = containerRect.left + (endXPct / 100) * containerRect.width;
+    const endY = containerRect.bottom - 20;
+    const fireId = nextId();
+    setFallingFires((prev) => [
+      ...prev,
+      { id: fireId, startX, startY, endX, endY },
+    ]);
+    setTimeout(() => {
+      setMonkeyBurnt(true);
+      setMonkeyJumping(true);
+      setTimeout(() => setMonkeyJumping(false), 600);
+    }, 300);
+  }, [nextId]);
+
   const triggerAnimations = useCallback(
-    (char: string, rect: DOMRect) => {
+    (char: string, rect: DOMRect, isCorrect = true) => {
       const id = nextId();
       const bx = rect.left + rect.width / 2;
       const by = rect.top + rect.height / 2;
 
       setBursts((prev) => [...prev, { id, x: bx, y: by }]);
-      setMonkeyJumping(true);
-      setTimeout(() => setMonkeyJumping(false), 500);
+      if (isCorrect) {
+        triggerFallingApple();
+        setMonkeyJumping(true);
+        setTimeout(() => setMonkeyJumping(false), 500);
+      } else {
+        triggerFallingFire();
+      }
+      // Update monkey target X to follow cursor position
+      if (monkeyContainerRef.current && cursorRef.current) {
+        const containerRect =
+          monkeyContainerRef.current.getBoundingClientRect();
+        const cRect = cursorRef.current.getBoundingClientRect();
+        const relX =
+          ((cRect.left + cRect.width / 2 - containerRect.left) /
+            containerRect.width) *
+          100;
+        setMonkeyTargetX(Math.max(5, Math.min(92, relX)));
+      }
 
       if (textAreaRef.current) {
-        const taRect = textAreaRef.current.getBoundingClientRect();
-        const endX = taRect.right - taRect.width * 0.12;
-        const endY = taRect.top + taRect.height / 2;
+        let endX: number;
+        let endY: number;
+        if (cursorRef.current) {
+          const cRect = cursorRef.current.getBoundingClientRect();
+          endX = cRect.left + cRect.width / 2;
+          endY = cRect.top + cRect.height / 2;
+        } else {
+          const taRect = textAreaRef.current.getBoundingClientRect();
+          endX = taRect.left + taRect.width * 0.5;
+          endY = taRect.top + taRect.height / 2;
+        }
         const flyId = nextId();
         setFlyingLetters((prev) => [
           ...prev,
@@ -1027,7 +1293,7 @@ export default function App() {
         ]);
       }
     },
-    [nextId],
+    [nextId, triggerFallingApple, triggerFallingFire],
   );
 
   useEffect(() => {
@@ -1083,7 +1349,22 @@ export default function App() {
           }
           if (soundOn) speak(combo);
           showFlash(combo);
-          triggerAnimations(combo, rect);
+          const comboPos =
+            splitChars(text.normalize("NFC")).length -
+            (pendingRootRef.current
+              ? splitChars(pendingRootRef.current.normalize("NFC")).length
+              : 0);
+          const comboIsCorrect = !referenceText
+            ? true
+            : (() => {
+                const refChars = splitChars(referenceText.normalize("NFC"));
+                const typedChars = splitChars(combo.normalize("NFC"));
+                for (let ci = 0; ci < typedChars.length; ci++) {
+                  if (typedChars[ci] !== refChars[comboPos + ci]) return false;
+                }
+                return true;
+              })();
+          triggerAnimations(combo, rect, comboIsCorrect);
           setSelectedConsonant(null);
           pendingRootRef.current = null;
         }
@@ -1091,26 +1372,58 @@ export default function App() {
         const vowel = VOWEL_GRID[rowIdx]?.[colIdx];
         if (vowel) {
           fireChar(vowel);
-          triggerAnimations(vowel, rect);
+          const vowelPos = splitChars(text.normalize("NFC")).length;
+          const vowelIsCorrect = !referenceText
+            ? true
+            : (() => {
+                const refChars = splitChars(referenceText.normalize("NFC"));
+                return (
+                  vowelPos >= refChars.length ||
+                  vowel.normalize("NFC") ===
+                    refChars[vowelPos]?.normalize("NFC")
+                );
+              })();
+          triggerAnimations(vowel, rect, vowelIsCorrect);
         }
       }
     },
-    [selectedConsonant, fireChar, soundOn, speak, showFlash, triggerAnimations],
+    [
+      selectedConsonant,
+      fireChar,
+      soundOn,
+      speak,
+      showFlash,
+      triggerAnimations,
+      referenceText,
+      text,
+    ],
   );
 
   const handleConsonant = useCallback(
     (root: string, rect: DOMRect) => {
       fireChar(root);
-      triggerAnimations(root, rect);
+      const rootPos = splitChars(text.normalize("NFC")).length;
+      const rootIsCorrect = !referenceText
+        ? true
+        : (() => {
+            const refChars = splitChars(referenceText.normalize("NFC"));
+            const rootChars = splitChars(root.normalize("NFC"));
+            for (let ci = 0; ci < rootChars.length; ci++) {
+              if (rootChars[ci] !== refChars[rootPos + ci]) return false;
+            }
+            return true;
+          })();
+      triggerAnimations(root, rect, rootIsCorrect);
       setSelectedConsonant(root);
       pendingRootRef.current = root;
     },
-    [fireChar, triggerAnimations],
+    [fireChar, triggerAnimations, referenceText, text],
   );
 
   const backspace = useCallback(() => {
     setSelectedConsonant(null);
     pendingRootRef.current = null;
+    setMonkeyBurnt(false);
     setText((prev) => {
       const arr = [...prev];
       arr.pop();
@@ -1177,10 +1490,20 @@ export default function App() {
   const handleEnglishKey = useCallback(
     (char: string, rect: DOMRect) => {
       fireChar(char, "en-US");
-      triggerAnimations(char, rect);
+      const enPos = splitChars(text.normalize("NFC")).length;
+      const enIsCorrect = !referenceText
+        ? true
+        : (() => {
+            const refChars = splitChars(referenceText.normalize("NFC"));
+            return (
+              enPos >= refChars.length ||
+              char.normalize("NFC") === refChars[enPos]?.normalize("NFC")
+            );
+          })();
+      triggerAnimations(char, rect, enIsCorrect);
       if (isShift) setIsShift(false);
     },
-    [fireChar, isShift, triggerAnimations],
+    [fireChar, isShift, triggerAnimations, referenceText, text],
   );
 
   const handleNumberKey = useCallback(
@@ -1258,6 +1581,24 @@ export default function App() {
               key={item.id}
               item={item}
               onComplete={removeFlyingLetter}
+            />
+          ))}
+        </AnimatePresence>
+        <AnimatePresence>
+          {fallingApples.map((item) => (
+            <FallingApple
+              key={item.id}
+              item={item}
+              onComplete={removeFallingApple}
+            />
+          ))}
+        </AnimatePresence>
+        <AnimatePresence>
+          {fallingFires.map((item) => (
+            <FallingFire
+              key={item.id}
+              item={item}
+              onComplete={removeFallingFire}
             />
           ))}
         </AnimatePresence>
@@ -1412,6 +1753,7 @@ export default function App() {
       {/* ── REFERENCE TEXT BOX ── */}
       <ReferenceBox
         referenceText={referenceText}
+        typedText={text}
         isEditing={isEditingReference}
         onEdit={() => setIsEditingReference(true)}
         onSave={handleReferenceSave}
@@ -1430,6 +1772,7 @@ export default function App() {
         >
           <div
             className="flex-1 flex flex-col rounded-2xl overflow-hidden"
+            ref={monkeyContainerRef}
             style={{
               position: "relative",
               border: "2px solid oklch(0.82 0.1 250)",
@@ -1437,6 +1780,7 @@ export default function App() {
               boxShadow: "inset 0 2px 6px oklch(0.7 0.06 250 / 0.15)",
             }}
           >
+            <GrapeBunch count={grapeCount} />
             <div
               className="px-2 py-0.5 flex-none"
               style={{
@@ -1477,6 +1821,7 @@ export default function App() {
                     {text}
                     {/* Sparkle cursor */}
                     <motion.span
+                      ref={cursorRef}
                       animate={{
                         scale: [1, 1.35, 0.9, 1.2, 1],
                         rotate: [0, 20, -15, 10, 0],
@@ -1490,7 +1835,7 @@ export default function App() {
                       className="inline-block ml-0.5 align-middle"
                       style={{ fontSize: "0.75em" }}
                     >
-                      ✨
+                      🍇
                     </motion.span>
                   </motion.div>
                 ) : (
@@ -1513,7 +1858,11 @@ export default function App() {
                 )}
               </AnimatePresence>
             </div>
-            <WanderingMonkey isJumping={monkeyJumping} />
+            <WanderingMonkey
+              isJumping={monkeyJumping}
+              targetX={monkeyTargetX}
+              isBurnt={monkeyBurnt}
+            />
           </div>
         </div>
 
@@ -1627,6 +1976,8 @@ export default function App() {
                     setSelectedConsonant(null);
                     pendingRootRef.current = null;
                     setText((prev) => `${prev} `);
+                    setMonkeyBurnt(false);
+                    triggerFallingApple();
                   }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -1721,7 +2072,11 @@ export default function App() {
                 <motion.button
                   type="button"
                   data-ocid="keyboard.en_space_button"
-                  onClick={() => setText((prev) => `${prev} `)}
+                  onClick={() => {
+                    setText((prev) => `${prev} `);
+                    setMonkeyBurnt(false);
+                    triggerFallingApple();
+                  }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="flex-1 flex items-center justify-center gap-1.5
@@ -1782,7 +2137,11 @@ export default function App() {
                 <motion.button
                   type="button"
                   data-ocid="keyboard.num_space_button"
-                  onClick={() => setText((prev) => `${prev} `)}
+                  onClick={() => {
+                    setText((prev) => `${prev} `);
+                    setMonkeyBurnt(false);
+                    triggerFallingApple();
+                  }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="flex-1 flex items-center justify-center gap-1.5
