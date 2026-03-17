@@ -1249,6 +1249,7 @@ export default function App() {
 
       setBursts((prev) => [...prev, { id, x: bx, y: by }]);
       if (isCorrect) {
+        setMonkeyBurnt(false);
         triggerFallingApple();
         setMonkeyJumping(true);
         setTimeout(() => setMonkeyJumping(false), 500);
