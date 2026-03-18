@@ -345,7 +345,7 @@ function WanderingMonkey({
               }
       }
     >
-      {isBurnt ? "🔥🐒" : "🐒"}
+      {"🐒"}
     </motion.div>
   );
 }
@@ -357,24 +357,49 @@ function FallingFire({
   item: FallingApple;
   onComplete: (id: number) => void;
 }) {
+  const [exploded, setExploded] = useState(false);
+
+  if (exploded) {
+    return (
+      <motion.div
+        initial={{ x: item.endX, y: item.endY, scale: 0, opacity: 1 }}
+        animate={{ scale: [0, 3, 0], opacity: [1, 1, 0] }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        onAnimationComplete={() => onComplete(item.id)}
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          fontSize: "clamp(30px, 8vmin, 56px)",
+          pointerEvents: "none",
+          zIndex: 9999,
+          transformOrigin: "center",
+          lineHeight: 1,
+        }}
+      >
+        💥
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{
         x: item.startX,
         y: item.startY,
-        scale: 2,
+        scale: 1.5,
         opacity: 1,
-        rotate: 0,
+        rotate: -15,
       }}
       animate={{
         x: item.endX,
         y: item.endY,
-        scale: [2, 2.5, 0],
-        opacity: [1, 1, 0],
-        rotate: [0, 20, -20, 10, 0],
+        scale: [1.5, 2, 1.8],
+        opacity: 1,
+        rotate: [-15, 10, -10, 5, -5, 0],
       }}
-      transition={{ duration: 0.45, ease: [0.2, 0.8, 0.4, 1] }}
-      onAnimationComplete={() => onComplete(item.id)}
+      transition={{ duration: 0.5, ease: [0.2, 0.8, 0.4, 1] }}
+      onAnimationComplete={() => setExploded(true)}
       style={{
         position: "fixed",
         left: 0,
@@ -384,10 +409,10 @@ function FallingFire({
         zIndex: 9999,
         transformOrigin: "center",
         lineHeight: 1,
-        filter: "drop-shadow(0 0 8px rgba(255,80,0,0.9))",
+        filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.4))",
       }}
     >
-      🔥
+      💣
     </motion.div>
   );
 }
@@ -449,19 +474,19 @@ function FlyingLetter({
       initial={{
         x: item.startX,
         y: item.startY,
-        scale: 7,
+        scale: 4,
         opacity: 1,
         rotate: 0,
       }}
       animate={{
         x: item.endX,
         y: item.endY,
-        scale: [7, 8, 0.3],
+        scale: [4, 5, 0.3],
         opacity: [1, 1, 1, 0],
         rotate: [0, -8, 8, 0],
       }}
       transition={{
-        duration: 0.75,
+        duration: 1.1,
         ease: [0.15, 0.85, 0.5, 1],
       }}
       onAnimationComplete={() => onComplete(item.id)}
@@ -469,7 +494,7 @@ function FlyingLetter({
         position: "fixed",
         left: 0,
         top: 0,
-        fontSize: "clamp(28px, 7vmin, 56px)",
+        fontSize: "clamp(20px, 5vmin, 38px)",
         fontWeight: 900,
         color: "oklch(0.55 0.28 25)",
         pointerEvents: "none",
@@ -488,39 +513,27 @@ function FlyingLetter({
 
 // ── SPEECH ────────────────────────────────────────────────────────────────────
 
-// English-TTS pronunciations for the NG (U+0B99) series
-// Uses codePoint comparison to avoid any string-encoding ambiguity
-function getNgaEnglish(normalized: string): string | null {
-  if (normalized.codePointAt(0) !== 0x0b99) return null; // not NG
-  const cp1 = normalized.codePointAt(1);
-  if (cp1 === undefined) return "Nga"; // standalone NG
-  if (cp1 === 0x0bcd) return "Nga"; // NG + virama (pure consonant)
-  if (cp1 === 0x0bbe) return "Ngaa"; // NGaa
-  if (cp1 === 0x0bbf) return "Ngi"; // NGi
-  if (cp1 === 0x0bc0) return "Ngii"; // NGii
-  if (cp1 === 0x0bc1) return "Ngu"; // NGu
-  if (cp1 === 0x0bc2) return "Nguu"; // NGuu
-  if (cp1 === 0x0bc6) return "Nge"; // NGe
-  if (cp1 === 0x0bc7) return "Ngee"; // NGee
-  if (cp1 === 0x0bc8) return "Ngai"; // NGai
-  if (cp1 === 0x0bca) return "Ngo"; // NGo
-  if (cp1 === 0x0bcb) return "Ngoo"; // NGoo
-  if (cp1 === 0x0bcc) return "Ngau"; // NGau
-  return null;
-}
-
 function getPronunciation(char: string): {
   text: string;
   lang: string;
   rate?: number;
 } {
   const normalized = char.normalize("NFC");
-  // Use English TTS for NG (U+0B99) series - codePoint-based to avoid encoding issues
-  const ngaText = getNgaEnglish(normalized);
-  if (ngaText !== null) {
-    return { text: ngaText, lang: "en-US", rate: 0.75 };
+  // Special pure-consonant overrides: prepend "இ" so TTS pronounces correctly
+  const pureConsonantMap: Record<string, string> = {
+    "\u0B99\u0BCD": "\u0B87\u0B99\u0BCD", // ங் → இங்
+    "\u0B9A\u0BCD": "\u0B87\u0B9A\u0BCD", // ச் → இச்
+    "\u0B9E\u0BCD": "\u0B87\u0B9E\u0BCD", // ஞ் → இஞ்
+    "\u0B9F\u0BCD": "\u0B87\u0B9F\u0BCD", // ட் → இட்
+    "\u0BB0\u0BCD": "\u0B87\u0BB0\u0BCD", // ர் → இர்
+    "\u0BA9\u0BCD": "\u0B87\u0BA9\u0BCD", // ன் → இன்
+  };
+  if (pureConsonantMap[normalized]) {
+    return { text: pureConsonantMap[normalized], lang: "ta-IN", rate: 0.85 };
   }
-  return { text: normalized, lang: "ta-IN", rate: 0.85 };
+  // For ங-series (vowel combos), substitute ஞ so TTS uses ஞ sound
+  const ttsText = normalized.replace(/\u0B99/g, "\u0B9E");
+  return { text: ttsText, lang: "ta-IN", rate: 0.85 };
 }
 
 function useSpeech() {
@@ -541,12 +554,13 @@ function useSpeech() {
 // ── REFERENCE TEXT BOX ────────────────────────────────────────────────────────
 
 const PRESET_SENTENCES = [
-  "தமிழ் கற்றுக்கொள்ள இதை தட்டச்சு செய்யுங்கள். உங்களுக்கு பிடித்த வாக்கியத்தை நகலெடுத்து இதில் ஒட்டி பயன்படுத்துங்கள். நாங்கள் சேமித்து வைத்துள்ள பல வாக்கியங்களை அடுத்தடுத்து மாற்றிக் கொள்ளுங்கள்.",
+  "தமிழ் கற்றுக்கொள்ள இதை தட்டச்சு செய்யுங்கள் அல்லது உங்களுக்கு பிடித்ததை வாக்கியத்தை நகலெடுத்து இதில் ஒட்டி பயன்படுத்துங்கள் நாங்கள் சேமித்த வைத்துள்ள பல வாக்கியங்களை அடுத்தடுத்து மாற்றிக் கொள்ளுங்கள்",
   "அம்மா அப்பா அண்ணன் தம்பி அக்கா தங்கை தாத்தா பாட்டி மகன் மகள்",
+  "",
   "தாகத்தில் காகம் பானையை பார்த்தது. தண்ணீர் அடியில் இருந்தது கல்லை உள்ளே போட்டு, தண்ணி மேலே வந்தது. தண்ணீர் குடித்து பறந்து சென்றது.",
-  "பாட்டி சுட்ட வடையை காகம் திருடியது. காகம் வாயில் வடையை பார்த்த நரி, காகத்தை பாட சொன்னது. காகம் பாடியதும், வடை கீழே விழுந்தது. நரி அதை வாயில் கவ்வி பிடித்து ஓடியது.",
+  "பாட்டி சுட்ட வடையை காகம் திருடியது. காகம் வாயில் வடையை பார்த்த நரி, காகத்தை பாட சொன்னது. காகம் பாடியதும், வடை கீழே விழுந்தது. நரி அதை வாயில் கல்வி பிடித்து ஓடியது.",
   "தமிழன் என்று சொல்லடா தலை நிமிர்ந்து நில்லடா",
-  "இந்தத் தமிழ் தட்டச்சு பயன்படுத்தி தமிழ் கற்றுக் கொண்டிருப்பீர்கள் என்று நம்புகிறேன்.",
+  "இந்தத் தமிழ் விசைப்பலகை பயன்படுத்தி தமிழ் கற்றுக் கொண்டிருப்பீர்கள் என்று நம்புகிறேன்.",
 ];
 
 interface ReferenceBoxProps {
@@ -592,15 +606,15 @@ function ReferenceBox({
   return (
     <div
       data-ocid="reference.panel"
-      className="flex-none flex flex-col"
+      className="flex-1 flex flex-col"
       style={{
         background: "oklch(0.98 0.06 280)",
         border: "2px solid oklch(0.80 0.14 280)",
         borderRadius: "12px",
         margin: "2px 4px 2px",
         overflow: "hidden",
-        height: "19%",
-        flex: "none",
+        flex: "1",
+        minHeight: 0,
       }}
     >
       {/* Header */}
@@ -613,9 +627,9 @@ function ReferenceBox({
       >
         <span
           className="tamil-text font-bold flex-1"
-          style={{ fontSize: "clamp(11px, 2vmin, 13px)", color: "white" }}
+          style={{ fontSize: "clamp(9px, 1.6vmin, 11px)", color: "white" }}
         >
-          📖 பார்க்க வேண்டிய வாக்கியம்
+          பார்த்து எழுது
         </span>
         {!isEditing && (
           <>
@@ -694,9 +708,9 @@ function ReferenceBox({
             className="w-full h-full resize-none tamil-text outline-none px-2 py-1"
             style={{
               background: "transparent",
-              fontSize: "clamp(14px, 3.5vmin, 22px)",
+              fontSize: "clamp(9px, 1.8vmin, 13px)",
               fontWeight: 700,
-              lineHeight: 1.4,
+              lineHeight: 1.2,
               color: "oklch(0.2 0.08 280)",
               minHeight: "40px",
             }}
@@ -704,15 +718,15 @@ function ReferenceBox({
         ) : (
           <div
             data-ocid="reference.display"
-            className="w-full h-full overflow-y-auto px-2 py-1"
-            style={{ wordBreak: "break-all" }}
+            className="w-full h-full overflow-hidden px-2 py-1"
+            style={{ wordBreak: "keep-all" }}
           >
             {referenceText ? (
               <p
                 className="tamil-text"
                 style={{
-                  fontSize: "clamp(14px, 3.5vmin, 22px)",
-                  lineHeight: 1.4,
+                  fontSize: "clamp(9px, 1.8vmin, 13px)",
+                  lineHeight: 1.2,
                   fontWeight: 700,
                   letterSpacing: "0.02em",
                 }}
@@ -1189,6 +1203,7 @@ export default function App() {
 
   // Animation state
   const [bursts, setBursts] = useState<BurstItem[]>([]);
+  const [monkeyBursts, setMonkeyBursts] = useState<BurstItem[]>([]);
   const [flyingLetters, setFlyingLetters] = useState<FlyingItem[]>([]);
   const [monkeyJumping, setMonkeyJumping] = useState(false);
   const [fallingApples, setFallingApples] = useState<FallingApple[]>([]);
@@ -1222,8 +1237,23 @@ export default function App() {
     setFallingApples((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
+  const removeMonkeyBurst = useCallback((id: number) => {
+    setMonkeyBursts((prev) => prev.filter((b) => b.id !== id));
+  }, []);
+
   const removeFallingFire = useCallback((id: number) => {
-    setFallingFires((prev) => prev.filter((f) => f.id !== id));
+    setFallingFires((prev) => {
+      const item = prev.find((f) => f.id === id);
+      if (item) {
+        const burstId = idCounterRef.current + 1;
+        idCounterRef.current += 1;
+        setMonkeyBursts((mb) => [
+          ...mb,
+          { id: burstId, x: item.endX, y: item.endY },
+        ]);
+      }
+      return prev.filter((f) => f.id !== id);
+    });
   }, []);
 
   const triggerFallingApple = useCallback(() => {
@@ -1236,10 +1266,9 @@ export default function App() {
     const containerRect = monkeyContainerRef.current.getBoundingClientRect();
     const startX = cRect.left + cRect.width / 2;
     const startY = cRect.top + cRect.height / 2;
-    const relX = ((startX - containerRect.left) / containerRect.width) * 100;
-    const endXPct = Math.max(5, Math.min(92, relX));
-    const endX = containerRect.left + (endXPct / 100) * containerRect.width;
-    const endY = containerRect.bottom - 20;
+    const endX =
+      containerRect.left + (monkeyTargetX / 100) * containerRect.width;
+    const endY = containerRect.bottom - 30;
     const appleId = nextId();
     setFallingApples((prev) => [
       ...prev,
@@ -1250,7 +1279,7 @@ export default function App() {
       setMonkeyJumping(true);
       setTimeout(() => setMonkeyJumping(false), 600);
     }, 550);
-  }, [nextId]);
+  }, [nextId, monkeyTargetX]);
 
   const triggerFallingFire = useCallback(() => {
     if (!cursorRef.current || !monkeyContainerRef.current) return;
@@ -1258,10 +1287,9 @@ export default function App() {
     const containerRect = monkeyContainerRef.current.getBoundingClientRect();
     const startX = cRect.left + cRect.width / 2;
     const startY = cRect.top + cRect.height / 2;
-    const relX = ((startX - containerRect.left) / containerRect.width) * 100;
-    const endXPct = Math.max(5, Math.min(92, relX));
-    const endX = containerRect.left + (endXPct / 100) * containerRect.width;
-    const endY = containerRect.bottom - 20;
+    const endX =
+      containerRect.left + (monkeyTargetX / 100) * containerRect.width;
+    const endY = containerRect.bottom - 30;
     const fireId = nextId();
     setFallingFires((prev) => [
       ...prev,
@@ -1272,7 +1300,7 @@ export default function App() {
       setMonkeyJumping(true);
       setTimeout(() => setMonkeyJumping(false), 600);
     }, 300);
-  }, [nextId]);
+  }, [nextId, monkeyTargetX]);
 
   const triggerAnimations = useCallback(
     (char: string, rect: DOMRect, isCorrect = true) => {
@@ -1362,24 +1390,10 @@ export default function App() {
         const combos = getComboCells(selectedConsonant);
         const combo = combos[idx];
         if (combo) {
-          const root = pendingRootRef.current;
-          if (root) {
-            setText((prev) => {
-              if (prev.endsWith(root)) {
-                return prev.slice(0, prev.length - root.length) + combo;
-              }
-              return prev + combo;
-            });
-          } else {
-            setText((prev) => prev + combo);
-          }
+          setText((prev) => prev + combo);
           if (soundOn) speak(combo);
           showFlash(combo);
-          const comboPos =
-            splitChars(text.normalize("NFC")).length -
-            (pendingRootRef.current
-              ? splitChars(pendingRootRef.current.normalize("NFC")).length
-              : 0);
+          const comboPos = splitChars(text.normalize("NFC")).length;
           const comboIsCorrect = !referenceText
             ? true
             : (() => {
@@ -1427,23 +1441,39 @@ export default function App() {
 
   const handleConsonant = useCallback(
     (root: string, rect: DOMRect) => {
-      fireChar(root);
-      const rootPos = splitChars(text.normalize("NFC")).length;
-      const rootIsCorrect = !referenceText
-        ? true
-        : (() => {
-            const refChars = splitChars(referenceText.normalize("NFC"));
-            const rootChars = splitChars(root.normalize("NFC"));
-            for (let ci = 0; ci < rootChars.length; ci++) {
-              if (rootChars[ci] !== refChars[rootPos + ci]) return false;
-            }
-            return true;
-          })();
-      triggerAnimations(root, rect, rootIsCorrect);
-      setSelectedConsonant(root);
-      pendingRootRef.current = root;
+      if (selectedConsonant === root) {
+        // Second press: type the consonant
+        fireChar(root);
+        const rootPos = splitChars(text.normalize("NFC")).length;
+        const rootIsCorrect = !referenceText
+          ? true
+          : (() => {
+              const refChars = splitChars(referenceText.normalize("NFC"));
+              const rootChars = splitChars(root.normalize("NFC"));
+              for (let ci = 0; ci < rootChars.length; ci++) {
+                if (rootChars[ci] !== refChars[rootPos + ci]) return false;
+              }
+              return true;
+            })();
+        triggerAnimations(root, rect, rootIsCorrect);
+        setSelectedConsonant(null);
+        pendingRootRef.current = null;
+      } else {
+        // First press: show the உயிர்மெய் series (don't type yet)
+        if (soundOn) speak(root);
+        setSelectedConsonant(root);
+        pendingRootRef.current = null;
+      }
     },
-    [fireChar, triggerAnimations, referenceText, text],
+    [
+      selectedConsonant,
+      fireChar,
+      triggerAnimations,
+      referenceText,
+      text,
+      soundOn,
+      speak,
+    ],
   );
 
   const backspace = useCallback(() => {
@@ -1662,6 +1692,15 @@ export default function App() {
             />
           ))}
         </AnimatePresence>
+        <AnimatePresence>
+          {monkeyBursts.map((burst) => (
+            <FireworkBurst
+              key={burst.id}
+              burst={burst}
+              onComplete={removeMonkeyBurst}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* ── TOP BAR ── */}
@@ -1828,8 +1867,8 @@ export default function App() {
       >
         {/* Text display */}
         <div
-          className="flex-none flex gap-2 px-1 pt-2 pb-1"
-          style={{ height: "19%" }}
+          className="flex-1 flex gap-2 px-1 pt-2 pb-1"
+          style={{ minHeight: 0 }}
         >
           <div
             className="flex-1 flex flex-col rounded-2xl overflow-hidden"
@@ -1926,316 +1965,345 @@ export default function App() {
             />
           </div>
         </div>
+      </div>
 
-        {/* ── KEYBOARD ── */}
-        <div className="flex-1 px-2 pb-1" style={{ minHeight: 0 }}>
-          {/* Tamil mode hint */}
-          {keyboardMode === "tamil" && selectedConsonant && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-1 rounded-lg py-0.5"
-              style={{
-                background: "oklch(0.88 0.18 275)",
-                fontSize: "clamp(11px, 2.5vmin, 14px)",
-              }}
+      {/* ── KEYBOARD ── */}
+      <div
+        className="flex-none px-2 pb-3"
+        style={{ height: "calc(40vh + 8px)" }}
+      >
+        {/* Tamil mode hint */}
+        {keyboardMode === "tamil" && selectedConsonant && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-1 rounded-lg py-0.5"
+            style={{
+              background: "oklch(0.88 0.18 275)",
+              fontSize: "clamp(11px, 2.5vmin, 14px)",
+            }}
+          >
+            <span
+              className="tamil-text font-bold"
+              style={{ color: "oklch(0.2 0.12 270)" }}
             >
-              <span
-                className="tamil-text font-bold"
-                style={{ color: "oklch(0.2 0.12 270)" }}
-              >
-                {selectedConsonant} — இணைக்க ஒரு உயிர் தேர்வு செய்க
-              </span>
-            </motion.div>
-          )}
+              {selectedConsonant} — இணைக்க ஒரு உயிர் தேர்வு செய்க
+            </span>
+          </motion.div>
+        )}
 
-          {/* ── TAMIL KEYBOARD ── */}
-          {keyboardMode === "tamil" && (
+        {/* ── TAMIL KEYBOARD ── */}
+        {keyboardMode === "tamil" && (
+          <div
+            className="flex flex-col h-full"
+            style={{
+              border: "2px solid oklch(0.72 0.12 180)",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+            {CONSONANT_GRID.map((cRow, rowIdx) => (
+              <KeyRow
+                key={ROW_KEYS[rowIdx]}
+                rowIdx={rowIdx}
+                leftCells={leftCells[rowIdx]}
+                consonants={cRow}
+                selectedConsonant={selectedConsonant}
+                isComboMode={!!selectedConsonant}
+                onLeftKey={handleLeftKey}
+                onConsonant={handleConsonant}
+                onBackspace={backspace}
+              />
+            ))}
+
+            {/* Bottom action row */}
             <div
-              className="flex flex-col h-full"
+              className="flex flex-none"
               style={{
-                border: "2px solid oklch(0.72 0.12 180)",
-                borderRadius: "10px",
-                overflow: "hidden",
+                height: "clamp(48px, 12%, 64px)",
+                borderTop: "2px solid oklch(0.72 0.12 180)",
               }}
             >
-              {CONSONANT_GRID.map((cRow, rowIdx) => (
-                <KeyRow
-                  key={ROW_KEYS[rowIdx]}
-                  rowIdx={rowIdx}
-                  leftCells={leftCells[rowIdx]}
-                  consonants={cRow}
-                  selectedConsonant={selectedConsonant}
-                  isComboMode={!!selectedConsonant}
-                  onLeftKey={handleLeftKey}
-                  onConsonant={handleConsonant}
-                  onBackspace={backspace}
-                />
-              ))}
-
-              {/* Bottom action row */}
-              <div
-                className="flex flex-none"
+              {langToggleButton}
+              <motion.button
+                type="button"
+                data-ocid="keyboard.period_button"
+                onClick={(e) => {
+                  fireChar(".");
+                  triggerAnimations(
+                    ".",
+                    e.currentTarget.getBoundingClientRect(),
+                  );
+                }}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
                 style={{
-                  height: "clamp(30px, 7.5%, 48px)",
-                  borderTop: "2px solid oklch(0.72 0.12 180)",
+                  background: "oklch(0.65 0.22 220)",
+                  color: "white",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
+                  minWidth: "clamp(40px, 7%, 64px)",
+                  borderRight: "1px solid oklch(0.55 0.22 220 / 0.6)",
                 }}
               >
-                {langToggleButton}
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.period_button"
-                  onClick={(e) => {
-                    fireChar(".");
-                    triggerAnimations(
-                      ".",
-                      e.currentTarget.getBoundingClientRect(),
-                    );
-                  }}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center
+                🔵.
+              </motion.button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.comma_button"
+                onClick={(e) => {
+                  fireChar(",");
+                  triggerAnimations(
+                    ",",
+                    e.currentTarget.getBoundingClientRect(),
+                  );
+                }}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center
                     transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.65 0.22 220)",
-                    color: "white",
-                    fontSize: "clamp(14px, 3.5vmin, 22px)",
-                    minWidth: "clamp(40px, 7%, 64px)",
-                    borderRight: "1px solid oklch(0.55 0.22 220 / 0.6)",
-                  }}
-                >
-                  🔵.
-                </motion.button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.comma_button"
-                  onClick={(e) => {
-                    fireChar(",");
-                    triggerAnimations(
-                      ",",
-                      e.currentTarget.getBoundingClientRect(),
-                    );
-                  }}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center
-                    transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.65 0.22 145)",
-                    color: "white",
-                    fontSize: "clamp(14px, 3.5vmin, 22px)",
-                    minWidth: "clamp(40px, 7%, 64px)",
-                    borderRight: "1px solid oklch(0.55 0.22 145 / 0.6)",
-                  }}
-                >
-                  🟢,
-                </motion.button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.space_button"
-                  onClick={() => {
-                    setSelectedConsonant(null);
-                    pendingRootRef.current = null;
-                    setText((prev) => `${prev} `);
-                    setMonkeyBurnt(false);
-                    triggerFallingApple();
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className="flex-1 flex items-center justify-center gap-1.5
+                style={{
+                  background: "oklch(0.65 0.22 145)",
+                  color: "white",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
+                  minWidth: "clamp(40px, 7%, 64px)",
+                  borderRight: "1px solid oklch(0.55 0.22 145 / 0.6)",
+                }}
+              >
+                🟢,
+              </motion.button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.space_button"
+                onClick={() => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  setText((prev) => `${prev} `);
+                  setMonkeyBurnt(false);
+                  triggerFallingApple();
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="flex-1 flex items-center justify-center gap-1.5
                     transition-colors duration-75 select-none cursor-pointer font-bold tamil-text"
-                  style={{
-                    background: "oklch(0.78 0.16 265)",
-                    color: "white",
-                    fontSize: "clamp(12px, 2.5vmin, 15px)",
-                    borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
-                  }}
-                >
-                  🌟 <span style={{ fontSize: "1.2em" }}>␣</span> சரவணன் பர்வித்
-                  அதிதீரன்
-                </motion.button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.aytham_button"
-                  onClick={(e) => {
-                    setSelectedConsonant(null);
-                    pendingRootRef.current = null;
-                    fireChar("ஃ");
-                    triggerAnimations(
-                      "ஃ",
-                      e.currentTarget.getBoundingClientRect(),
-                    );
-                  }}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center tamil-text
-                    transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.72 0.20 30)",
-                    color: "white",
-                    fontSize: "clamp(15px, 4vmin, 26px)",
-                    minWidth: "clamp(40px, 8%, 64px)",
-                    borderRight: "1px solid oklch(0.60 0.20 30 / 0.6)",
-                  }}
-                >
-                  ஃ
-                </motion.button>
-                <motion.button
-                  type="button"
-                  onClick={() => {
-                    setSelectedConsonant(null);
-                    pendingRootRef.current = null;
-                    setText((prev) => `${prev}\n`);
-                  }}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center
-                    transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.55 0.20 145)",
-                    color: "white",
-                    fontSize: "clamp(14px, 3.5vmin, 22px)",
-                    minWidth: "clamp(48px, 10%, 80px)",
-                    borderBottomRightRadius: "8px",
-                  }}
-                >
-                  ✅
-                </motion.button>
-              </div>
-            </div>
-          )}
-
-          {/* ── ENGLISH KEYBOARD ── */}
-          {keyboardMode === "english" && (
-            <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
-              <div className="flex-1" style={{ minHeight: 0 }}>
-                <EnglishKeyboard
-                  isShift={isShift}
-                  onKey={handleEnglishKey}
-                  onBackspace={backspace}
-                  onToggleShift={() => setIsShift((s) => !s)}
-                />
-              </div>
-              {/* English bottom action row */}
-              <div
-                className="flex flex-none mt-0"
                 style={{
-                  height: "clamp(30px, 7.5%, 48px)",
-                  border: "2px solid oklch(0.72 0.10 220)",
-                  borderTop: "none",
-                  borderBottomLeftRadius: "10px",
-                  borderBottomRightRadius: "10px",
-                  overflow: "hidden",
-                  marginTop: "-2px",
+                  background: "oklch(0.78 0.16 265)",
+                  color: "white",
+                  fontSize: "clamp(12px, 2.5vmin, 15px)",
+                  borderRight: "1px solid oklch(0.62 0.16 250 / 0.6)",
                 }}
               >
-                {langToggleButton}
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.en_space_button"
-                  onClick={() => {
-                    setText((prev) => `${prev} `);
-                    setMonkeyBurnt(false);
-                    triggerFallingApple();
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className="flex-1 flex items-center justify-center gap-1.5
+                🌟 <span style={{ fontSize: "1.2em" }}>␣</span> சரவணன் பர்வித்
+                அதிதீரன்
+              </motion.button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.aytham_button"
+                onClick={(e) => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  fireChar("ஃ");
+                  triggerAnimations(
+                    "ஃ",
+                    e.currentTarget.getBoundingClientRect(),
+                  );
+                }}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center tamil-text
                     transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.78 0.10 220)",
-                    color: "white",
-                    fontSize: "clamp(12px, 2.5vmin, 15px)",
-                    borderRight: "1px solid oklch(0.65 0.10 220 / 0.6)",
-                  }}
-                >
-                  <span style={{ fontSize: "1.2em" }}>␣</span> Space
-                </motion.button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.en_enter_button"
-                  onClick={() => setText((prev) => `${prev}\n`)}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center
-                    transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.6 0.18 160)",
-                    color: "white",
-                    fontSize: "clamp(14px, 3.5vmin, 22px)",
-                    minWidth: "clamp(48px, 10%, 80px)",
-                  }}
-                >
-                  ↵
-                </motion.button>
-              </div>
-            </div>
-          )}
-
-          {/* ── NUMBERS KEYBOARD ── */}
-          {keyboardMode === "numbers" && (
-            <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
-              <div className="flex-1" style={{ minHeight: 0 }}>
-                <NumbersKeyboard
-                  onKey={handleNumberKey}
-                  onBackspace={backspace}
-                />
-              </div>
-              {/* Numbers bottom action row */}
-              <div
-                className="flex flex-none"
                 style={{
-                  height: "clamp(30px, 7.5%, 48px)",
-                  border: "2px solid oklch(0.72 0.10 300)",
-                  borderTop: "none",
-                  borderBottomLeftRadius: "10px",
-                  borderBottomRightRadius: "10px",
-                  overflow: "hidden",
-                  marginTop: "-2px",
+                  background: "oklch(0.72 0.20 30)",
+                  color: "white",
+                  fontSize: "clamp(15px, 4vmin, 26px)",
+                  minWidth: "clamp(40px, 8%, 64px)",
+                  borderRight: "1px solid oklch(0.60 0.20 30 / 0.6)",
                 }}
               >
-                {langToggleButton}
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.num_space_button"
-                  onClick={() => {
-                    setText((prev) => `${prev} `);
-                    setMonkeyBurnt(false);
-                    triggerFallingApple();
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className="flex-1 flex items-center justify-center gap-1.5
+                ஃ
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => {
+                  setSelectedConsonant(null);
+                  pendingRootRef.current = null;
+                  setText((prev) => `${prev}\n`);
+                }}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center
                     transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.78 0.10 300)",
-                    color: "white",
-                    fontSize: "clamp(12px, 2.5vmin, 15px)",
-                    borderRight: "1px solid oklch(0.65 0.10 300 / 0.6)",
-                  }}
-                >
-                  <span style={{ fontSize: "1.2em" }}>␣</span> Space
-                </motion.button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.num_enter_button"
-                  onClick={() => setText((prev) => `${prev}\n`)}
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                  className="flex items-center justify-center
-                    transition-colors duration-75 select-none cursor-pointer font-bold"
-                  style={{
-                    background: "oklch(0.6 0.18 160)",
-                    color: "white",
-                    fontSize: "clamp(14px, 3.5vmin, 22px)",
-                    minWidth: "clamp(48px, 10%, 80px)",
-                  }}
-                >
-                  ↵
-                </motion.button>
-              </div>
+                style={{
+                  background: "oklch(0.55 0.20 145)",
+                  color: "white",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
+                  minWidth: "clamp(48px, 10%, 80px)",
+                  borderBottomRightRadius: "8px",
+                }}
+              >
+                ✅
+              </motion.button>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* ── ENGLISH KEYBOARD ── */}
+        {keyboardMode === "english" && (
+          <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
+            <div className="flex-1" style={{ minHeight: 0 }}>
+              <EnglishKeyboard
+                isShift={isShift}
+                onKey={handleEnglishKey}
+                onBackspace={backspace}
+                onToggleShift={() => setIsShift((s) => !s)}
+              />
+            </div>
+            {/* English bottom action row */}
+            <div
+              className="flex flex-none mt-0"
+              style={{
+                height: "clamp(48px, 12%, 64px)",
+                border: "2px solid oklch(0.72 0.10 220)",
+                borderTop: "none",
+                borderBottomLeftRadius: "10px",
+                borderBottomRightRadius: "10px",
+                overflow: "hidden",
+                marginTop: "-2px",
+              }}
+            >
+              {langToggleButton}
+              <motion.button
+                type="button"
+                data-ocid="keyboard.en_space_button"
+                onClick={() => {
+                  setText((prev) => `${prev} `);
+                  setMonkeyBurnt(false);
+                  triggerFallingApple();
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="flex-1 flex items-center justify-center gap-1.5
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
+                style={{
+                  background: "oklch(0.78 0.10 220)",
+                  color: "white",
+                  fontSize: "clamp(12px, 2.5vmin, 15px)",
+                  borderRight: "1px solid oklch(0.65 0.10 220 / 0.6)",
+                }}
+              >
+                <span style={{ fontSize: "1.2em" }}>␣</span> Space
+              </motion.button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.en_enter_button"
+                onClick={() => setText((prev) => `${prev}\n`)}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
+                style={{
+                  background: "oklch(0.6 0.18 160)",
+                  color: "white",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
+                  minWidth: "clamp(48px, 10%, 80px)",
+                }}
+              >
+                ↵
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {/* ── NUMBERS KEYBOARD ── */}
+        {keyboardMode === "numbers" && (
+          <div className="flex flex-col h-full" style={{ minHeight: 0 }}>
+            <div className="flex-1" style={{ minHeight: 0 }}>
+              <NumbersKeyboard
+                onKey={handleNumberKey}
+                onBackspace={backspace}
+              />
+            </div>
+            {/* Numbers bottom action row */}
+            <div
+              className="flex flex-none"
+              style={{
+                height: "clamp(48px, 12%, 64px)",
+                border: "2px solid oklch(0.72 0.10 300)",
+                borderTop: "none",
+                borderBottomLeftRadius: "10px",
+                borderBottomRightRadius: "10px",
+                overflow: "hidden",
+                marginTop: "-2px",
+              }}
+            >
+              {langToggleButton}
+              <motion.button
+                type="button"
+                data-ocid="keyboard.num_space_button"
+                onClick={() => {
+                  setText((prev) => `${prev} `);
+                  setMonkeyBurnt(false);
+                  triggerFallingApple();
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="flex-1 flex items-center justify-center gap-1.5
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
+                style={{
+                  background: "oklch(0.78 0.10 300)",
+                  color: "white",
+                  fontSize: "clamp(12px, 2.5vmin, 15px)",
+                  borderRight: "1px solid oklch(0.65 0.10 300 / 0.6)",
+                }}
+              >
+                <span style={{ fontSize: "1.2em" }}>␣</span> Space
+              </motion.button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.num_enter_button"
+                onClick={() => setText((prev) => `${prev}\n`)}
+                whileTap={{ scale: 0.82 }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                className="flex items-center justify-center
+                    transition-colors duration-75 select-none cursor-pointer font-bold"
+                style={{
+                  background: "oklch(0.6 0.18 160)",
+                  color: "white",
+                  fontSize: "clamp(14px, 3.5vmin, 22px)",
+                  minWidth: "clamp(48px, 10%, 80px)",
+                }}
+              >
+                ↵
+              </motion.button>
+            </div>
+          </div>
+        )}
+        {/* Dummy spacer button row - aligned to space bar width */}
+        <div
+          className="flex"
+          style={{
+            width: "100%",
+            padding: "2px 0",
+            background: "oklch(0.92 0.03 80)",
+          }}
+        >
+          {/* Left ghost: langToggle + dot + comma */}
+          <div
+            style={{ minWidth: "clamp(116px, 20.5%, 186px)", flexShrink: 0 }}
+          />
+          {/* Center dummy - same flex-1 as space bar */}
+          <div
+            className="flex-1"
+            style={{
+              height: "clamp(18px, 3.5vmin, 28px)",
+              background: "oklch(0.85 0.04 80)",
+              borderRadius: "6px",
+              border: "1px solid oklch(0.75 0.04 80)",
+            }}
+          />
+          {/* Right ghost: ஃ + enter/✅ */}
+          <div style={{ minWidth: "clamp(88px, 18%, 144px)", flexShrink: 0 }} />
         </div>
       </div>
       <footer
