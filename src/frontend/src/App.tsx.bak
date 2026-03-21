@@ -125,6 +125,7 @@ const NUM_ROW_TEXT = [
 
 type KeyboardMode = "tamil" | "english" | "numbers";
 type TypingMode = "watch" | "scroll" | "listen";
+type TypingMode = "watch" | "scroll" | "listen";
 
 function nextMode(m: KeyboardMode): KeyboardMode {
   if (m === "tamil") return "english";
@@ -554,44 +555,36 @@ function useSpeech() {
 
 // ── TYPING MODE HELPERS ────────────────────────────────────────────────────────
 
+function getNextNonSpaceIndex(chars: string[], startIdx: number): number {
+  let idx = startIdx;
+  while (idx < chars.length && (chars[idx] === " " || chars[idx] === "\n")) {
+    idx++;
+  }
+  return idx;
+}
+
 function FloatingChar({
   char,
   onComplete,
-  isSpace,
-  explode,
-  containerHeight = 300,
 }: {
   char: string;
   onComplete: () => void;
-  isSpace?: boolean;
-  explode?: boolean;
-  containerHeight?: number;
 }) {
   return (
     <motion.div
       key={char + Math.random()}
-      initial={{ y: 80, opacity: 1, scale: 1 }}
-      animate={
-        explode
-          ? { scale: [1, 2.5, 0], opacity: [1, 1, 0] }
-          : { y: -(containerHeight + 80), opacity: [0, 1, 1, 1, 1] }
-      }
-      transition={
-        explode ? { duration: 0.35 } : { duration: 6, ease: "linear" }
-      }
+      initial={{ y: "100%", opacity: 1 }}
+      animate={{ y: "-110%", opacity: [1, 1, 1, 0] }}
+      transition={{ duration: 3.5, ease: "linear" }}
       onAnimationComplete={onComplete}
       style={{
         position: "absolute",
         left: "50%",
         bottom: 0,
         transform: "translateX(-50%)",
-        fontSize: isSpace
-          ? "clamp(32px, 6vmin, 50px)"
-          : "clamp(40px, 8vmin, 60px)",
+        fontSize: "clamp(40px, 8vmin, 60px)",
         fontWeight: 900,
-        color: isSpace
-          ? "oklch(0.55 0.22 265)"
-          : PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+        color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
         pointerEvents: "none",
         zIndex: 20,
         lineHeight: 1,
@@ -599,7 +592,111 @@ function FloatingChar({
       }}
       className="tamil-text"
     >
-      {isSpace ? "␣" : char}
+      {char}
+    </motion.div>
+  );
+}
+
+function BoxFireworks({ active }: { active: boolean }) {
+  if (!active) return null;
+  const particleCount = 24;
+  const particles = Array.from({ length: particleCount }, (_, i) => {
+    const angle = (i / particleCount) * 360 + Math.random() * 15 - 7;
+    const distance = 60 + Math.random() * 100;
+    const color = PARTICLE_COLORS[i % PARTICLE_COLORS.length];
+    const size = 10 + Math.random() * 12;
+    return { angle, distance, color, size, id: i };
+  });
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 30,
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {particles.map((p) => {
+        const rad = (p.angle * Math.PI) / 180;
+        const dx = Math.cos(rad) * p.distance;
+        const dy = Math.sin(rad) * p.distance;
+        return (
+          <motion.div
+            key={p.id}
+            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            animate={{ x: dx, y: dy, scale: [1, 1.4, 0], opacity: [1, 1, 0] }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: p.id * 0.005 }}
+            style={{
+              position: "absolute",
+              width: p.size,
+              height: p.size,
+              borderRadius: "50%",
+              background: p.color,
+              boxShadow: `0 0 8px ${p.color}`,
+            }}
+          />
+        );
+      })}
+      <motion.div
+        initial={{ scale: 0, opacity: 1 }}
+        animate={{ scale: 4, opacity: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        style={{
+          position: "absolute",
+          width: 30,
+          height: 30,
+          borderRadius: "50%",
+          background: "white",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── TYPING MODE HELPERS ────────────────────────────────────────────────────────
+
+function getNextNonSpaceIndex(chars: string[], startIdx: number): number {
+  let idx = startIdx;
+  while (idx < chars.length && (chars[idx] === " " || chars[idx] === "\n")) {
+    idx++;
+  }
+  return idx;
+}
+
+function FloatingChar({
+  char,
+  onComplete,
+}: {
+  char: string;
+  onComplete: () => void;
+}) {
+  return (
+    <motion.div
+      key={char + Math.random()}
+      initial={{ y: "100%", opacity: 1 }}
+      animate={{ y: "-110%", opacity: [1, 1, 1, 0] }}
+      transition={{ duration: 3.5, ease: "linear" }}
+      onAnimationComplete={onComplete}
+      style={{
+        position: "absolute",
+        left: "50%",
+        bottom: 0,
+        transform: "translateX(-50%)",
+        fontSize: "clamp(40px, 8vmin, 60px)",
+        fontWeight: 900,
+        color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+        pointerEvents: "none",
+        zIndex: 20,
+        lineHeight: 1,
+        textShadow: "0 2px 12px rgba(0,0,0,0.25)",
+      }}
+      className="tamil-text"
+    >
+      {char}
     </motion.div>
   );
 }
@@ -669,6 +766,7 @@ function BoxFireworks({ active }: { active: boolean }) {
 const PRESET_SENTENCES = [
   "தமிழ் கற்றுக்கொள்ள இதை தட்டச்சு செய்யுங்கள் அல்லது உங்களுக்கு பிடித்ததை வாக்கியத்தை நகலெடுத்து இதில் ஒட்டி பயன்படுத்துங்கள் நாங்கள் சேமித்த வைத்துள்ள பல வாக்கியங்களை அடுத்தடுத்து மாற்றிக் கொள்ளுங்கள்",
   "அம்மா அப்பா அண்ணன் தம்பி அக்கா தங்கை தாத்தா பாட்டி மகன் மகள்",
+  "",
   "தாகத்தில் காகம் பானையை பார்த்தது. தண்ணீர் அடியில் இருந்தது கல்லை உள்ளே போட்டு, தண்ணி மேலே வந்தது. தண்ணீர் குடித்து பறந்து சென்றது.",
   "பாட்டி சுட்ட வடையை காகம் திருடியது. காகம் வாயில் வடையை பார்த்த நரி, காகத்தை பாட சொன்னது. காகம் பாடியதும், வடை கீழே விழுந்தது. நரி அதை வாயில் கல்வி பிடித்து ஓடியது.",
   "தமிழன் என்று சொல்லடா தலை நிமிர்ந்து நில்லடா",
@@ -689,7 +787,6 @@ interface ReferenceBoxProps {
   onNextMode: () => void;
   boxFireworks: boolean;
   onReplaySound: () => void;
-  explodeChar?: boolean;
 }
 
 function splitChars(str: string): string[] {
@@ -715,25 +812,10 @@ function ReferenceBox({
   onNextMode,
   boxFireworks,
   onReplaySound,
-  explodeChar,
 }: ReferenceBoxProps) {
   const [floatKey, setFloatKey] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(300);
-
-  useEffect(() => {
-    if (!scrollContainerRef.current) return;
-    const obs = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerHeight(entry.contentRect.height);
-      }
-    });
-    obs.observe(scrollContainerRef.current);
-    return () => obs.disconnect();
-  }, []);
 
   // When modeChar changes in scroll mode, restart the float animation
-  // biome-ignore lint/correctness/useExhaustiveDependencies: modeChar is a prop, triggers intentionally
   useEffect(() => {
     if (typingMode === "scroll") {
       setFloatKey((k) => k + 1);
@@ -795,11 +877,7 @@ function ReferenceBox({
           }}
           title="டைப்பிங் முறை மாற்று"
         >
-          {typingMode === "watch"
-            ? "1️⃣ பார்"
-            : typingMode === "scroll"
-              ? "2️⃣ நகர்"
-              : "3️⃣ ஓசை"}
+          {typingMode === "watch" ? "1️⃣ பார்" : typingMode === "scroll" ? "2️⃣ நகர்" : "3️⃣ ஓசை"}
         </button>
         {!isEditing && (
           <>
@@ -895,8 +973,8 @@ function ReferenceBox({
               overflow: "hidden",
             }}
           >
-            {typingMode === "watch" &&
-              (referenceText ? (
+            {typingMode === "watch" && (
+              referenceText ? (
                 <p
                   className="tamil-text"
                   style={{
@@ -914,8 +992,7 @@ function ReferenceBox({
                       let bg = "transparent";
                       if (i < typedChars.length) {
                         const match =
-                          typedChars[i].normalize("NFC") ===
-                          ch.normalize("NFC");
+                          typedChars[i].normalize("NFC") === ch.normalize("NFC");
                         color = match ? "#15803d" : "#dc2626";
                         bg = match ? "#bbf7d0" : "#fecaca";
                       }
@@ -948,10 +1025,10 @@ function ReferenceBox({
                   மேலே உள்ள &quot;தட்டு / Paste&quot; பட்டனை அழுத்தி வாக்கியங்களை
                   சேர்க்கவும்
                 </p>
-              ))}
+              )
+            )}
             {typingMode === "scroll" && (
               <div
-                ref={scrollContainerRef}
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -965,22 +1042,10 @@ function ReferenceBox({
                   <FloatingChar
                     key={floatKey}
                     char={modeChar}
-                    isSpace={modeChar === " "}
-                    explode={explodeChar}
-                    containerHeight={containerHeight}
-                    onComplete={() => {
-                      if (!explodeChar) setFloatKey((k) => k + 1);
-                    }}
+                    onComplete={() => setFloatKey((k) => k + 1)}
                   />
                 ) : (
-                  <p
-                    className="tamil-text"
-                    style={{
-                      fontSize: "clamp(12px, 2.5vmin, 15px)",
-                      color: "oklch(0.65 0.08 280)",
-                      fontStyle: "italic",
-                    }}
-                  >
+                  <p className="tamil-text" style={{ fontSize: "clamp(12px, 2.5vmin, 15px)", color: "oklch(0.65 0.08 280)", fontStyle: "italic" }}>
                     வாக்கியம் சேர்க்கவும்...
                   </p>
                 )}
@@ -999,36 +1064,21 @@ function ReferenceBox({
                 }}
               >
                 <BoxFireworks active={boxFireworks} />
-                {modeChar === " " ? (
-                  <div
-                    className="tamil-text font-bold"
-                    style={{
-                      fontSize: "clamp(28px, 6vmin, 48px)",
-                      color: "oklch(0.45 0.22 265)",
-                      textAlign: "center",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    ␣<br />
-                    <span style={{ fontSize: "0.6em" }}>இடைவெளி</span>
-                  </div>
-                ) : (
-                  <motion.button
-                    type="button"
-                    onClick={onReplaySound}
-                    whileTap={{ scale: 0.9 }}
-                    style={{
-                      fontSize: "clamp(32px, 8vmin, 56px)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      lineHeight: 1,
-                    }}
-                    title="மீண்டும் கேளுங்கள்"
-                  >
-                    🔊
-                  </motion.button>
-                )}
+                <motion.button
+                  type="button"
+                  onClick={onReplaySound}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    fontSize: "clamp(32px, 8vmin, 56px)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    lineHeight: 1,
+                  }}
+                  title="மீண்டும் கேளுங்கள்"
+                >
+                  🔊
+                </motion.button>
                 <p
                   className="tamil-text font-bold"
                   style={{
@@ -1037,9 +1087,7 @@ function ReferenceBox({
                     textAlign: "center",
                   }}
                 >
-                  {modeChar === " "
-                    ? "இடைவெளி விடுங்கள்"
-                    : "ஒலியை கேட்டு தட்டச்சு செய்யுங்கள்"}
+                  ஒலியை கேட்டு தட்டச்சு செய்யுங்கள்
                 </p>
               </div>
             )}
@@ -1487,49 +1535,46 @@ export default function App() {
   const [modeCharIndex, setModeCharIndex] = useState(0);
   const [boxFireworks, setBoxFireworks] = useState(false);
 
+  // Typing mode state
+  const [typingMode, setTypingMode] = useState<TypingMode>("watch");
+  const [modeCharIndex, setModeCharIndex] = useState(0);
+  const [boxFireworks, setBoxFireworks] = useState(false);
+
   const pendingRootRef = useRef<string | null>(null);
   const textScrollRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
   const monkeyContainerRef = useRef<HTMLDivElement>(null);
-  const refBoxRef = useRef<HTMLDivElement>(null);
   const idCounterRef = useRef(0);
   const { speak } = useSpeech();
-  const [scrollExplodeActive, setScrollExplodeActive] = useState(false);
 
-  // Derive modeChar (include spaces)
+  // Derive modeChar (skip spaces)
   const modeCharDerived = (() => {
     const chars = splitChars(referenceText.normalize("NFC"));
     if (!chars.length) return "";
-    const idx = modeCharIndex % Math.max(1, chars.length);
-    return chars[idx] ?? "";
+    const safeIdx = getNextNonSpaceIndex(chars, modeCharIndex % Math.max(1, chars.length));
+    return chars[safeIdx] ?? chars[0] ?? "";
   })();
 
   // Reset modeCharIndex when mode or referenceText changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset trigger
   useEffect(() => {
     setModeCharIndex(0);
   }, [typingMode, referenceText]);
 
   // Mode 3: auto-play sound when modeChar changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: presetIndex forces re-trigger on sentence change
   useEffect(() => {
-    if (typingMode === "listen" && modeCharDerived !== undefined) {
-      const textToSpeak = modeCharDerived === " " ? "இடைவெளி" : modeCharDerived;
-      if (!textToSpeak) return;
-      const timer = setTimeout(() => speak(textToSpeak), 400);
+    if (typingMode === "listen" && modeCharDerived) {
+      const timer = setTimeout(() => speak(modeCharDerived), 400);
       return () => clearTimeout(timer);
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: referenceText added to force re-trigger
-  }, [typingMode, modeCharDerived, speak, presetIndex, referenceText]);
+  }, [typingMode, modeCharDerived, speak]);
 
   // Mode 2: auto-advance after 3.5s if not typed
-  // biome-ignore lint/correctness/useExhaustiveDependencies: modeCharIndex used to reset timer
   useEffect(() => {
     if (typingMode !== "scroll" || !modeCharDerived) return;
     const timer = setTimeout(() => {
       setModeCharIndex((prev) => prev + 1);
-    }, 5200);
+    }, 3700);
     return () => clearTimeout(timer);
   }, [typingMode, modeCharDerived, modeCharIndex]);
 
@@ -1545,15 +1590,68 @@ export default function App() {
     (committedChar: string) => {
       if (typingMode === "watch" || !referenceText) return;
       const chars = splitChars(referenceText.normalize("NFC"));
-      const idx = modeCharIndex % Math.max(1, chars.length);
-      const expected = chars[idx];
+      const safeIdx = getNextNonSpaceIndex(chars, modeCharIndex % Math.max(1, chars.length));
+      const expected = chars[safeIdx];
       if (committedChar.normalize("NFC") === expected?.normalize("NFC")) {
         if (typingMode === "scroll") {
-          setScrollExplodeActive(true);
-          setTimeout(() => {
-            setModeCharIndex((prev) => prev + 1);
-            setScrollExplodeActive(false);
-          }, 380);
+          setModeCharIndex((prev) => prev + 1);
+        } else {
+          setBoxFireworks(true);
+          setTimeout(() => setBoxFireworks(false), 1000);
+          setTimeout(() => setModeCharIndex((prev) => prev + 1), 300);
+        }
+      }
+    },
+    [typingMode, referenceText, modeCharIndex],
+  );
+
+  // Derive modeChar (skip spaces)
+  const modeCharDerived = (() => {
+    const chars = splitChars(referenceText.normalize("NFC"));
+    if (!chars.length) return "";
+    const safeIdx = getNextNonSpaceIndex(chars, modeCharIndex % Math.max(1, chars.length));
+    return chars[safeIdx] ?? chars[0] ?? "";
+  })();
+
+  // Reset modeCharIndex when mode or referenceText changes
+  useEffect(() => {
+    setModeCharIndex(0);
+  }, [typingMode, referenceText]);
+
+  // Mode 3: auto-play sound when modeChar changes
+  useEffect(() => {
+    if (typingMode === "listen" && modeCharDerived) {
+      const timer = setTimeout(() => speak(modeCharDerived), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [typingMode, modeCharDerived, speak]);
+
+  // Mode 2: auto-advance after 3.5s if not typed
+  useEffect(() => {
+    if (typingMode !== "scroll" || !modeCharDerived) return;
+    const timer = setTimeout(() => {
+      setModeCharIndex((prev) => prev + 1);
+    }, 3700);
+    return () => clearTimeout(timer);
+  }, [typingMode, modeCharDerived, modeCharIndex]);
+
+  const handleNextMode = useCallback(() => {
+    setTypingMode((prev) => {
+      if (prev === "watch") return "scroll";
+      if (prev === "scroll") return "listen";
+      return "watch";
+    });
+  }, []);
+
+  const checkModeChar = useCallback(
+    (committedChar: string) => {
+      if (typingMode === "watch" || !referenceText) return;
+      const chars = splitChars(referenceText.normalize("NFC"));
+      const safeIdx = getNextNonSpaceIndex(chars, modeCharIndex % Math.max(1, chars.length));
+      const expected = chars[safeIdx];
+      if (committedChar.normalize("NFC") === expected?.normalize("NFC")) {
+        if (typingMode === "scroll") {
+          setModeCharIndex((prev) => prev + 1);
         } else {
           setBoxFireworks(true);
           setTimeout(() => setBoxFireworks(false), 1000);
@@ -1805,14 +1903,7 @@ export default function App() {
         pendingRootRef.current = null;
       }
     },
-    [
-      selectedConsonant,
-      fireChar,
-      triggerAnimations,
-      referenceText,
-      text,
-      checkModeChar,
-    ],
+    [selectedConsonant, fireChar, triggerAnimations, referenceText, text, checkModeChar],
   );
 
   const backspace = useCallback(() => {
@@ -1879,7 +1970,6 @@ export default function App() {
       setReferenceText(PRESET_SENTENCES[next]);
       return next;
     });
-    setModeCharIndex(0);
     setIsEditingReference(false);
   }, []);
 
@@ -2020,253 +2110,235 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* ── SHARED BOXES WRAPPER ── */}
+      {/* ── REFERENCE TEXT BOX ── */}
+      <ReferenceBox
+        referenceText={referenceText}
+        typedText={text}
+        isEditing={isEditingReference}
+        onEdit={() => setIsEditingReference(true)}
+        onSave={handleReferenceSave}
+        onClear={handleReferenceClear}
+        onNextPreset={handleNextPreset}
+        presetIndex={presetIndex}
+        typingMode={typingMode}
+        modeChar={modeCharDerived}
+        onNextMode={handleNextMode}
+        boxFireworks={boxFireworks}
+        onReplaySound={() => speak(modeCharDerived)}
+      />
+
+      {/* ── MAIN CONTENT ── */}
       <div
         className="flex-1 overflow-hidden flex flex-col"
         style={{ minHeight: 0 }}
       >
-        {/* ── REFERENCE TEXT BOX ── */}
+        {/* Text display */}
         <div
-          ref={refBoxRef}
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
+          className="flex-1 flex gap-2 px-1 pt-2 pb-1"
+          style={{ minHeight: 0 }}
         >
-          <ReferenceBox
-            referenceText={referenceText}
-            typedText={text}
-            isEditing={isEditingReference}
-            onEdit={() => setIsEditingReference(true)}
-            onSave={handleReferenceSave}
-            onClear={handleReferenceClear}
-            onNextPreset={handleNextPreset}
-            presetIndex={presetIndex}
-            typingMode={typingMode}
-            modeChar={modeCharDerived}
-            onNextMode={handleNextMode}
-            boxFireworks={boxFireworks}
-            onReplaySound={() => speak(modeCharDerived)}
-            explodeChar={scrollExplodeActive}
-          />
-        </div>
-
-        {/* ── MAIN CONTENT ── */}
-        <div
-          className="overflow-hidden flex flex-col"
-          style={{ flex: 1, minHeight: 0 }}
-        >
-          {/* Text display */}
           <div
-            className="flex-1 flex gap-2 px-1 pt-2 pb-1"
-            style={{ minHeight: 0 }}
+            className="flex-1 flex flex-col rounded-2xl overflow-hidden"
+            ref={monkeyContainerRef}
+            style={{
+              position: "relative",
+              border: "2px solid oklch(0.82 0.1 250)",
+              background: "oklch(1 0 0)",
+              boxShadow: "inset 0 2px 6px oklch(0.7 0.06 250 / 0.15)",
+            }}
           >
             <div
-              className="flex-1 flex flex-col rounded-2xl overflow-hidden"
-              ref={monkeyContainerRef}
+              className="px-2 py-0.5 flex-none flex items-center gap-1"
               style={{
-                position: "relative",
-                border: "2px solid oklch(0.82 0.1 250)",
-                background: "oklch(1 0 0)",
-                boxShadow: "inset 0 2px 6px oklch(0.7 0.06 250 / 0.15)",
+                background: "oklch(0.88 0.12 185)",
+                borderBottom: "1px solid oklch(0.78 0.14 185)",
               }}
             >
-              <div
-                className="px-2 py-0.5 flex-none flex items-center gap-1"
+              <span
+                className="tamil-text font-bold flex-none"
                 style={{
-                  background: "oklch(0.88 0.12 185)",
-                  borderBottom: "1px solid oklch(0.78 0.14 185)",
+                  fontSize: "clamp(11px, 2vmin, 14px)",
+                  color: "oklch(0.25 0.1 200)",
                 }}
               >
-                <span
-                  className="tamil-text font-bold flex-none"
-                  style={{
-                    fontSize: "clamp(11px, 2vmin, 14px)",
-                    color: "oklch(0.25 0.1 200)",
-                  }}
-                >
-                  உங்கள் உரை
-                </span>
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  data-ocid="keyboard.sound_toggle"
-                  onClick={toggleSound}
-                  aria-label={soundOn ? "Mute" : "Unmute"}
-                  className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white transition-all hover:bg-white/20 active:bg-white/30"
-                  style={{
-                    fontSize: "clamp(10px, 1.8vmin, 12px)",
-                    background: "oklch(0.72 0.14 185 / 0.6)",
-                  }}
-                >
-                  <AnimatePresence mode="wait" initial={false}>
-                    {soundOn ? (
-                      <motion.span
-                        key="on"
-                        initial={{ scale: 0.7 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.7 }}
-                      >
-                        <Volume2 className="w-3 h-3" />
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="off"
-                        initial={{ scale: 0.7 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.7 }}
-                      >
-                        <VolumeX className="w-3 h-3" />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                  <span className="tamil-text hidden sm:inline">
-                    {soundOn ? "ஒலி" : "முடக்கு"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  data-ocid="keyboard.copy_button"
-                  onClick={copyToClipboard}
-                  disabled={!text}
-                  className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  style={{
-                    fontSize: "clamp(10px, 1.8vmin, 12px)",
-                    background: "oklch(0.72 0.14 185 / 0.6)",
-                  }}
-                >
-                  <Copy className="w-3 h-3" />
-                  <span className="tamil-text hidden sm:inline">நகல்</span>
-                </button>
-                <button
-                  type="button"
-                  data-ocid="keyboard.clear_button"
-                  onClick={clearAll}
-                  disabled={!text}
-                  className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  style={{
-                    fontSize: "clamp(10px, 1.8vmin, 12px)",
-                    background: "oklch(0.72 0.14 185 / 0.6)",
-                  }}
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span className="tamil-text hidden sm:inline">அழி</span>
-                </button>
-                <motion.button
-                  type="button"
-                  data-ocid="keyboard.listen_button"
-                  onClick={handleListen}
-                  disabled={!text}
-                  whileTap={{ scale: 0.95 }}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isListening ? "listen-pulse" : ""}`}
-                  style={{
-                    fontSize: "clamp(10px, 1.8vmin, 12px)",
-                    background: isListening
-                      ? "oklch(0.55 0.22 330)"
-                      : "oklch(0.62 0.18 275)",
-                    color: "white",
-                  }}
-                >
-                  <AnimatePresence mode="wait" initial={false}>
-                    {isListening ? (
-                      <motion.span
-                        key="stop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-0.5"
-                      >
-                        <Square className="w-3 h-3 fill-current" />
-                        <span className="tamil-text">நிறுத்து</span>
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="listen"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex items-center gap-0.5"
-                      >
-                        <Volume2 className="w-3 h-3" />
-                        <span className="tamil-text">கேளுங்கள்</span>
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              </div>
-              <div
-                data-ocid="keyboard.textarea"
-                ref={(el) => {
-                  (textScrollRef as any).current = el;
-                  (textAreaRef as any).current = el;
+                உங்கள் உரை
+              </span>
+              <div className="flex-1" />
+              <button
+                type="button"
+                data-ocid="keyboard.sound_toggle"
+                onClick={toggleSound}
+                aria-label={soundOn ? "Mute" : "Unmute"}
+                className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white transition-all hover:bg-white/20 active:bg-white/30"
+                style={{
+                  fontSize: "clamp(10px, 1.8vmin, 12px)",
+                  background: "oklch(0.72 0.14 185 / 0.6)",
                 }}
-                className="flex-1 overflow-y-auto overflow-x-hidden p-1 keyboard-scroll"
-                style={{ wordBreak: "break-all" }}
               >
-                <AnimatePresence mode="wait">
-                  {text ? (
-                    <motion.div
-                      key="text"
-                      className="tamil-text"
-                      style={{
-                        fontSize: "clamp(16px, 4vmin, 24px)",
-                        fontWeight: 700,
-                        lineHeight: 1.1,
-                        color: "oklch(0.2 0.05 260)",
-                      }}
+                <AnimatePresence mode="wait" initial={false}>
+                  {soundOn ? (
+                    <motion.span
+                      key="on"
+                      initial={{ scale: 0.7 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.7 }}
                     >
-                      {text}
-                      {/* Sparkle cursor */}
-                      <motion.span
-                        ref={cursorRef}
-                        animate={{
-                          scale: [1, 1.35, 0.9, 1.2, 1],
-                          rotate: [0, 20, -15, 10, 0],
-                          opacity: [1, 0.8, 1, 0.9, 1],
-                        }}
-                        transition={{
-                          duration: 1.2,
-                          repeat: Number.POSITIVE_INFINITY,
-                          ease: "easeInOut",
-                        }}
-                        className="inline-block ml-0.5 align-middle"
-                        style={{ fontSize: "0.75em" }}
-                      >
-                        🍇
-                      </motion.span>
-                    </motion.div>
+                      <Volume2 className="w-3 h-3" />
+                    </motion.span>
                   ) : (
-                    <motion.div
-                      key="placeholder"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="h-full flex items-center justify-center"
+                    <motion.span
+                      key="off"
+                      initial={{ scale: 0.7 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.7 }}
                     >
-                      <p
-                        className="tamil-text text-center"
-                        style={{
-                          fontSize: "clamp(11px, 2vmin, 14px)",
-                          color: "oklch(0.7 0.06 250)",
-                        }}
-                      >
-                        இங்கே தட்டச்சு செய்யுங்கள்...
-                      </p>
-                    </motion.div>
+                      <VolumeX className="w-3 h-3" />
+                    </motion.span>
                   )}
                 </AnimatePresence>
-              </div>
-              <WanderingMonkey
-                isJumping={monkeyJumping}
-                targetX={monkeyTargetX}
-                isBurnt={monkeyBurnt}
-              />
+                <span className="tamil-text hidden sm:inline">
+                  {soundOn ? "ஒலி" : "முடக்கு"}
+                </span>
+              </button>
+              <button
+                type="button"
+                data-ocid="keyboard.copy_button"
+                onClick={copyToClipboard}
+                disabled={!text}
+                className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                style={{
+                  fontSize: "clamp(10px, 1.8vmin, 12px)",
+                  background: "oklch(0.72 0.14 185 / 0.6)",
+                }}
+              >
+                <Copy className="w-3 h-3" />
+                <span className="tamil-text hidden sm:inline">நகல்</span>
+              </button>
+              <button
+                type="button"
+                data-ocid="keyboard.clear_button"
+                onClick={clearAll}
+                disabled={!text}
+                className="flex items-center gap-0.5 px-1 py-0.5 rounded text-white hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                style={{
+                  fontSize: "clamp(10px, 1.8vmin, 12px)",
+                  background: "oklch(0.72 0.14 185 / 0.6)",
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+                <span className="tamil-text hidden sm:inline">அழி</span>
+              </button>
+              <motion.button
+                type="button"
+                data-ocid="keyboard.listen_button"
+                onClick={handleListen}
+                disabled={!text}
+                whileTap={{ scale: 0.95 }}
+                className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${isListening ? "listen-pulse" : ""}`}
+                style={{
+                  fontSize: "clamp(10px, 1.8vmin, 12px)",
+                  background: isListening
+                    ? "oklch(0.55 0.22 330)"
+                    : "oklch(0.62 0.18 275)",
+                  color: "white",
+                }}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {isListening ? (
+                    <motion.span
+                      key="stop"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-0.5"
+                    >
+                      <Square className="w-3 h-3 fill-current" />
+                      <span className="tamil-text">நிறுத்து</span>
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="listen"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-0.5"
+                    >
+                      <Volume2 className="w-3 h-3" />
+                      <span className="tamil-text">கேளுங்கள்</span>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
+            <div
+              data-ocid="keyboard.textarea"
+              ref={(el) => {
+                (textScrollRef as any).current = el;
+                (textAreaRef as any).current = el;
+              }}
+              className="flex-1 overflow-y-auto overflow-x-hidden p-1 keyboard-scroll"
+              style={{ wordBreak: "break-all" }}
+            >
+              <AnimatePresence mode="wait">
+                {text ? (
+                  <motion.div
+                    key="text"
+                    className="tamil-text"
+                    style={{
+                      fontSize: "clamp(16px, 4vmin, 24px)",
+                      fontWeight: 700,
+                      lineHeight: 1.1,
+                      color: "oklch(0.2 0.05 260)",
+                    }}
+                  >
+                    {text}
+                    {/* Sparkle cursor */}
+                    <motion.span
+                      ref={cursorRef}
+                      animate={{
+                        scale: [1, 1.35, 0.9, 1.2, 1],
+                        rotate: [0, 20, -15, 10, 0],
+                        opacity: [1, 0.8, 1, 0.9, 1],
+                      }}
+                      transition={{
+                        duration: 1.2,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                      }}
+                      className="inline-block ml-0.5 align-middle"
+                      style={{ fontSize: "0.75em" }}
+                    >
+                      🍇
+                    </motion.span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="h-full flex items-center justify-center"
+                  >
+                    <p
+                      className="tamil-text text-center"
+                      style={{
+                        fontSize: "clamp(11px, 2vmin, 14px)",
+                        color: "oklch(0.7 0.06 250)",
+                      }}
+                    >
+                      இங்கே தட்டச்சு செய்யுங்கள்...
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <WanderingMonkey
+              isJumping={monkeyJumping}
+              targetX={monkeyTargetX}
+              isBurnt={monkeyBurnt}
+            />
           </div>
         </div>
       </div>
-      {/* ── END SHARED BOXES WRAPPER ── */}
 
       {/* ── KEYBOARD ── */}
       <div
@@ -2369,21 +2441,6 @@ export default function App() {
                   });
                   setMonkeyBurnt(false);
                   triggerFallingApple();
-                  if (
-                    (typingMode === "scroll" || typingMode === "listen") &&
-                    refBoxRef.current
-                  ) {
-                    const rect = refBoxRef.current.getBoundingClientRect();
-                    const bx = rect.left + rect.width / 2;
-                    const by = rect.top + rect.height / 2;
-                    const burstId = nextId();
-                    setBursts((prev) => [
-                      ...prev,
-                      { id: burstId, x: bx, y: by },
-                    ]);
-                    setTimeout(() => removeBurst(burstId), 1000);
-                  }
-                  checkModeChar(" ");
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -2488,21 +2545,6 @@ export default function App() {
                   });
                   setMonkeyBurnt(false);
                   triggerFallingApple();
-                  if (
-                    (typingMode === "scroll" || typingMode === "listen") &&
-                    refBoxRef.current
-                  ) {
-                    const rect = refBoxRef.current.getBoundingClientRect();
-                    const bx = rect.left + rect.width / 2;
-                    const by = rect.top + rect.height / 2;
-                    const burstId = nextId();
-                    setBursts((prev) => [
-                      ...prev,
-                      { id: burstId, x: bx, y: by },
-                    ]);
-                    setTimeout(() => removeBurst(burstId), 1000);
-                  }
-                  checkModeChar(" ");
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
@@ -2574,21 +2616,6 @@ export default function App() {
                   });
                   setMonkeyBurnt(false);
                   triggerFallingApple();
-                  if (
-                    (typingMode === "scroll" || typingMode === "listen") &&
-                    refBoxRef.current
-                  ) {
-                    const rect = refBoxRef.current.getBoundingClientRect();
-                    const bx = rect.left + rect.width / 2;
-                    const by = rect.top + rect.height / 2;
-                    const burstId = nextId();
-                    setBursts((prev) => [
-                      ...prev,
-                      { id: burstId, x: bx, y: by },
-                    ]);
-                    setTimeout(() => removeBurst(burstId), 1000);
-                  }
-                  checkModeChar(" ");
                 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
